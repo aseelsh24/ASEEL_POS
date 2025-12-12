@@ -12,6 +12,7 @@ import {
   toggleProductActive,
   updateProduct,
 } from '../api/productsApi'
+import { exportProductsToCsv, importProductsFromCsv, parseProductsCsv } from '../api/catalogCsvApi'
 
 interface ProductFormState {
   name: string
@@ -46,6 +47,16 @@ export default function ProductsPage() {
   const [categoryError, setCategoryError] = useState<string | null>(null)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [showInactiveCategories, setShowInactiveCategories] = useState(false)
+
+  const [csvFile, setCsvFile] = useState<File | null>(null)
+  const [csvError, setCsvError] = useState<string | null>(null)
+  const [csvSummary, setCsvSummary] = useState<{
+    created: number
+    updated: number
+    skipped: number
+    errors: string[]
+  } | null>(null)
+  const [csvLoading, setCsvLoading] = useState(false)
 
   useEffect(() => {
     void loadCategories()
@@ -198,6 +209,52 @@ export default function ProductsPage() {
     await loadProducts()
   }
 
+  async function handleCsvImport() {
+    if (!csvFile) {
+      setCsvError('يرجى اختيار ملف CSV أولاً')
+      return
+    }
+    setCsvError(null)
+    setCsvSummary(null)
+    setCsvLoading(true)
+
+    try {
+      const parsedRows = await parseProductsCsv(csvFile)
+      const summary = await importProductsFromCsv(parsedRows)
+      setCsvSummary(summary)
+      await loadCategories()
+      await loadProducts()
+    } catch (err: any) {
+      setCsvError(err?.message ?? 'تعذر استيراد الملف')
+    } finally {
+      setCsvLoading(false)
+    }
+  }
+
+  async function handleCsvExport() {
+    setCsvError(null)
+    setCsvLoading(true)
+    try {
+      const csvText = await exportProductsToCsv({
+        name: filters.name || undefined,
+        barcode: filters.barcode || undefined,
+        categoryId: filters.categoryId || undefined,
+        activeOnly: filters.activeOnly,
+      })
+      const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `products-export-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.csv`
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch (err: any) {
+      setCsvError(err?.message ?? 'تعذر تصدير المنتجات')
+    } finally {
+      setCsvLoading(false)
+    }
+  }
+
   async function handleDisableCategory(id: number) {
     const confirmDisable = window.confirm('هل أنت متأكد من تعطيل الفئة؟')
     if (!confirmDisable) return
@@ -215,7 +272,8 @@ export default function ProductsPage() {
     if (!id) return '—'
     const found = categoryLookup.get(Number(id))
     if (!found) return 'فئة غير معروفة'
-    return found.name + (found.is_active ? '' : ' (غير نشطة)')
+    return found.name + (found.is_active ? '' : ' (غير نشطة)'
+    )
   }
 
   return (
@@ -228,6 +286,42 @@ export default function ProductsPage() {
       </header>
 
       <div className="grid-layout">
+        <div className="card">
+          <div className="card-header">
+            <h2>أدوات CSV</h2>
+            {csvLoading && <span className="muted">جارٍ المعالجة...</span>}
+          </div>
+          <div className="csv-tools-grid">
+            <label className="form-field">
+              <span>ملف المنتجات (CSV)</span>
+              <input type="file" accept=".csv" onChange={(e) => setCsvFile(e.target.files?.[0] ?? null)} />
+            </label>
+            <div className="csv-actions">
+              <button type="button" onClick={handleCsvImport} disabled={csvLoading}>
+                استيراد من CSV
+              </button>
+              <button type="button" className="secondary" onClick={handleCsvExport} disabled={csvLoading}>
+                تصدير المنتجات إلى CSV
+              </button>
+            </div>
+          </div>
+          {csvSummary && (
+            <div className="csv-summary">
+              <div className="muted">
+                تم إضافة {csvSummary.created} منتجات، تحديث {csvSummary.updated} منتجات، وتخطي {csvSummary.skipped} صف.
+              </div>
+              {csvSummary.errors.length > 0 && (
+                <ul className="error-list">
+                  {csvSummary.errors.map((err, idx) => (
+                    <li key={idx}>{err}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+          {csvError && <div className="error-text">{csvError}</div>}
+        </div>
+
         <div className="card">
           <div className="card-header">
             <h2>تصفية المنتجات</h2>
