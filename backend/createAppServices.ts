@@ -1,5 +1,11 @@
 import { DexieDbClient } from "../packages/db/src/index.js";
-import { InvoiceService, PurchaseService, ReturnService, StockLedgerService } from "./ServiceLayer_POS_Grocery_MVP.ts";
+import {
+  InvoiceService,
+  PurchaseService,
+  ReturnService,
+  SettingsService,
+  StockLedgerService,
+} from "./ServiceLayer_POS_Grocery_MVP.ts";
 
 export function createAppServices() {
   const db = new DexieDbClient();
@@ -8,6 +14,7 @@ export function createAppServices() {
   return {
     db,
     stockLedger: new StockLedgerService(uow),
+    settingsService: new SettingsService(uow),
     invoiceService: new InvoiceService(uow),
     purchaseService: new PurchaseService(uow),
     returnService: new ReturnService(uow),
