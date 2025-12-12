@@ -22,6 +22,7 @@ import {
   MovementType,
   PaymentMethod,
   PaymentStatus,
+  Category,
   Product,
   Purchase,
   PurchaseItem,
@@ -112,6 +113,8 @@ export class StockError extends DomainError {
   }
 }
 
+const DEFAULT_MIN_STOCK_ALERT = 5;
+
 /* ===========================
    Users Service
    =========================== */
@@ -197,6 +200,162 @@ export class SettingsService {
     };
 
     return this.uow.settings.save(updated);
+  }
+}
+
+/* ===========================
+   Catalog Service
+   =========================== */
+
+export interface CategoryInput {
+  name: string;
+  is_active?: boolean;
+}
+
+export interface ProductInput {
+  name: string;
+  barcode?: string | null;
+  categoryId?: ID | null;
+  unit?: string | null;
+  sale_price: number;
+  cost_price?: number | null;
+  min_stock_alert?: number;
+  stock_qty?: number;
+  max_discount?: number | null;
+  is_active?: boolean;
+}
+
+export interface ProductFilters {
+  name?: string;
+  barcode?: string;
+  categoryId?: string | number;
+  activeOnly?: boolean;
+}
+
+export class CatalogService {
+  constructor(private uow: UnitOfWork) {}
+
+  private normalizeCategoryId(value: any): ID | undefined {
+    if (value === null || value === undefined || value === "") return undefined;
+    const numeric = Number(value);
+    return Number.isNaN(numeric) ? undefined : numeric;
+  }
+
+  private async ensureUniqueBarcode(barcode?: string | null, ignoreId?: ID) {
+    if (!barcode) return;
+    const existing = await this.uow.products.getProductByBarcode(barcode);
+    if (existing) {
+      const existingId = existing.id ?? existing.product_id;
+      if (existingId !== ignoreId) {
+        throw new DomainError("Barcode already exists", "DUPLICATE_BARCODE");
+      }
+    }
+  }
+
+  async listCategories(options?: { includeInactive?: boolean }): Promise<Category[]> {
+    return this.uow.categories.listCategories(options);
+  }
+
+  async createCategory(input: CategoryInput): Promise<Category> {
+    if (!input.name?.trim()) throw new ValidationError("Category name is required");
+
+    const now = nowIso();
+    return this.uow.categories.createCategory({
+      name: input.name.trim(),
+      is_active: input.is_active ?? true,
+      createdAt: now,
+      updatedAt: now,
+      created_at: now,
+      updated_at: now,
+    } as Category);
+  }
+
+  async updateCategory(id: ID, input: Partial<CategoryInput>): Promise<Category> {
+    if (input.name !== undefined && !input.name.trim()) {
+      throw new ValidationError("Category name is required");
+    }
+    return this.uow.categories.updateCategory(id, {
+      ...input,
+      name: input.name?.trim() ?? undefined,
+    });
+  }
+
+  async softDeleteCategory(id: ID): Promise<void> {
+    await this.uow.categories.softDeleteCategory(id);
+  }
+
+  async listProducts(filters?: ProductFilters): Promise<Product[]> {
+    return this.uow.products.listProducts(filters ?? {});
+  }
+
+  async createProduct(input: ProductInput): Promise<Product> {
+    if (!input.name?.trim()) throw new ValidationError("Product name is required");
+    if (input.sale_price === undefined || input.sale_price === null || input.sale_price <= 0) {
+      throw new ValidationError("Sale price must be greater than 0");
+    }
+
+    const barcode = input.barcode?.trim() || undefined;
+    await this.ensureUniqueBarcode(barcode);
+
+    const now = nowIso();
+    const categoryId = this.normalizeCategoryId(input.categoryId);
+
+    const product: Partial<Product> = {
+      name: input.name.trim(),
+      barcode: barcode ?? null,
+      categoryId: categoryId ?? null,
+      category_id: categoryId ?? null,
+      unit: input.unit ?? null,
+      sale_price: input.sale_price,
+      cost_price: input.cost_price ?? null,
+      stock_qty: input.stock_qty ?? 0,
+      min_stock_alert: input.min_stock_alert ?? DEFAULT_MIN_STOCK_ALERT,
+      max_discount: input.max_discount ?? null,
+      is_active: input.is_active ?? true,
+      createdAt: now,
+      updatedAt: now,
+      created_at: now,
+      updated_at: now,
+    };
+
+    return this.uow.products.createProduct(product as Product);
+  }
+
+  async updateProduct(id: ID, input: Partial<ProductInput>): Promise<Product> {
+    const existing = await this.uow.products.getProductById(id);
+    if (!existing) throw new NotFoundError("Product");
+
+    const barcode = input.barcode?.trim() ?? existing.barcode ?? undefined;
+    await this.ensureUniqueBarcode(barcode, existing.id ?? existing.product_id);
+
+    const categoryId = this.normalizeCategoryId(input.categoryId ?? existing.categoryId ?? existing.category_id);
+    const now = nowIso();
+
+    const patch: Partial<Product> = {
+      name: input.name?.trim() ?? existing.name,
+      barcode: barcode ?? null,
+      categoryId: categoryId ?? null,
+      category_id: categoryId ?? null,
+      unit: input.unit ?? existing.unit ?? null,
+      sale_price: input.sale_price ?? existing.sale_price,
+      cost_price: input.cost_price ?? existing.cost_price ?? null,
+      stock_qty: existing.stock_qty ?? 0,
+      min_stock_alert: input.min_stock_alert ?? existing.min_stock_alert ?? DEFAULT_MIN_STOCK_ALERT,
+      max_discount: input.max_discount ?? existing.max_discount ?? null,
+      is_active: input.is_active ?? existing.is_active,
+      updatedAt: now,
+      updated_at: now,
+    };
+
+    return this.uow.products.updateProduct(id, patch);
+  }
+
+  async toggleProductActive(id: ID, isActive: boolean): Promise<Product> {
+    return this.updateProduct(id, { is_active: isActive });
+  }
+
+  async getProductById(id: ID): Promise<Product | null> {
+    return this.uow.products.getProductById(id);
   }
 }
 
