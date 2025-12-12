@@ -112,6 +112,12 @@
   cursor: pointer;
 }
 
+.form-actions .secondary {
+  background-color: #f3f4f6;
+  color: #111827;
+  margin-inline-start: 0.5rem;
+}
+
 .form-actions button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -181,4 +187,145 @@ dt {
 dd {
   margin: 0;
   color: #374151;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.75rem;
+  text-align: start;
+}
+
+.data-table th {
+  background-color: #f9fafb;
+  font-weight: 800;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actions-cell button,
+.category-actions button,
+.form-actions button,
+.card button {
+  border: none;
+  background-color: #4f46e5;
+  color: #fff;
+  padding: 0.5rem 0.9rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.actions-cell .secondary,
+.category-actions .secondary,
+.form-actions .secondary,
+.card .secondary {
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.badge-success {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.badge-muted {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.muted {
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.category-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.category-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.category-name {
+  font-weight: 700;
+}
+
+.csv-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.csv-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.csv-summary {
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.error-list {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  color: #b91c1c;
 }
