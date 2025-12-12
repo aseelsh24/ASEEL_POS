@@ -8,6 +8,7 @@ import {
   CatalogService,
   UsersService,
   AdjustmentService,
+  ReportService,
 } from "./ServiceLayer_POS_Grocery_MVP.ts";
 
 export function createAppServices() {
@@ -24,5 +25,6 @@ export function createAppServices() {
     adjustmentService: new AdjustmentService(uow),
     catalogService: new CatalogService(uow),
     usersService: new UsersService(uow),
+    reportsService: new ReportService(uow),
   };
 }

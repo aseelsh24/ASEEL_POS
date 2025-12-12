@@ -941,12 +941,41 @@ export class ReportService {
     endIso: string,
     topN: number = 10
   ): Promise<
-    Array<{ product_id: ID; qty: number; value: number }>
+    Array<{ product_id: ID; name: string; qty: number; value: number }>
   > {
-    // Skeleton placeholder:
-    // في التطبيق الحقيقي ستجلب InvoiceItems ضمن نطاق،
-    // أو تستخدم Query Aggregate في SQLite.
-    throw new DomainError("Implement with repo aggregate or query helper", "NOT_IMPLEMENTED");
+    const invoices = await this.uow.invoices.listByDateRange(startIso, endIso);
+    const valid = invoices.filter((inv) => !inv.is_cancelled);
+
+    const aggregates = new Map<ID, { qty: number; value: number }>();
+
+    for (const inv of valid) {
+      const items = await this.uow.invoices.getItems(inv.invoice_id);
+      for (const item of items) {
+        const current = aggregates.get(item.product_id) ?? { qty: 0, value: 0 };
+        aggregates.set(item.product_id, {
+          qty: current.qty + item.qty,
+          value: current.value + item.line_total,
+        });
+      }
+    }
+
+    const productIds = Array.from(aggregates.keys());
+    const products = productIds.length ? await this.uow.products.getByIds(productIds) : [];
+    const productNameMap = new Map(products.map((p) => [p.product_id ?? (p as any).id, p.name] as [ID, string]));
+
+    const sorted = Array.from(aggregates.entries())
+      .map(([product_id, data]) => ({
+        product_id,
+        name: productNameMap.get(product_id) ?? "منتج غير معروف",
+        qty: data.qty,
+        value: data.value,
+      }))
+      .sort((a, b) => {
+        if (b.qty !== a.qty) return b.qty - a.qty;
+        return b.value - a.value;
+      });
+
+    return sorted.slice(0, topN);
   }
 
   /**
@@ -956,9 +985,66 @@ export class ReportService {
   async getEstimatedProfit(
     startIso: string,
     endIso: string
-  ): Promise<number> {
-    // Skeleton placeholder.
-    throw new DomainError("Implement profit calculation", "NOT_IMPLEMENTED");
+  ): Promise<{ estimated_profit: number; revenue: number; cost_basis: number }> {
+    const invoices = await this.uow.invoices.listByDateRange(startIso, endIso);
+    const valid = invoices.filter((inv) => !inv.is_cancelled);
+
+    const aggregates = new Map<ID, { revenue: number; qty: number }>();
+
+    for (const inv of valid) {
+      const items = await this.uow.invoices.getItems(inv.invoice_id);
+      for (const item of items) {
+        const current = aggregates.get(item.product_id) ?? { revenue: 0, qty: 0 };
+        aggregates.set(item.product_id, {
+          revenue: current.revenue + item.line_total,
+          qty: current.qty + item.qty,
+        });
+      }
+    }
+
+    const productIds = Array.from(aggregates.keys());
+    const products = productIds.length ? await this.uow.products.getByIds(productIds) : [];
+    const costMap = new Map(products.map((p) => [p.product_id ?? (p as any).id, p.cost_price ?? 0] as [ID, number]));
+
+    let totalRevenue = 0;
+    let totalCost = 0;
+
+    for (const [product_id, data] of aggregates.entries()) {
+      const unitCost = costMap.get(product_id) ?? 0;
+      totalRevenue += data.revenue;
+      totalCost += unitCost * data.qty;
+    }
+
+    return {
+      estimated_profit: totalRevenue - totalCost,
+      revenue: totalRevenue,
+      cost_basis: totalCost,
+    };
+  }
+
+  /**
+   * Low stock alerts based on current product quantities.
+   */
+  async getLowStockAlerts() {
+    const products = await this.uow.products.listProducts?.({ includeInactive: false } as any);
+    const resolvedProducts: Product[] = products ?? (await (this.uow.products as any).listProducts?.());
+    const list = resolvedProducts ?? [];
+
+    const alerts = list
+      .map((p) => ({
+        ...p,
+        min_stock_alert: p.min_stock_alert ?? DEFAULT_MIN_STOCK_ALERT,
+        stock_qty: p.stock_qty ?? 0,
+      }))
+      .filter((p) => (p.is_active ?? true) && p.stock_qty <= p.min_stock_alert)
+      .map((p) => ({
+        product_id: p.product_id ?? (p as any).id,
+        name: p.name,
+        stock_qty: p.stock_qty ?? 0,
+        min_stock_alert: p.min_stock_alert ?? DEFAULT_MIN_STOCK_ALERT,
+      }));
+
+    return alerts;
   }
 }
 
