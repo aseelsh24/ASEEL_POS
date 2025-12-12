@@ -144,6 +144,21 @@ export class DexieDbClient extends Dexie implements DbClient {
       users: "++user_id, username",
     });
 
+    this.version(3).upgrade(async (tx) => {
+      const productsTable = tx.table<Product, ID>("products");
+      const zeroIdProducts = await productsTable.where("id").equals(0).toArray();
+
+      for (const product of zeroIdProducts) {
+        const cloned: Product = { ...product } as Product;
+        delete (cloned as any).id;
+        delete (cloned as any).product_id;
+
+        const newId = await productsTable.add(cloned);
+        await productsTable.delete(0);
+        await productsTable.update(newId, { product_id: newId });
+      }
+    });
+
     this.categoriesTable = this.table("categories");
     this.productsTable = this.table("products");
     this.invoicesTable = this.table("invoices");
@@ -181,8 +196,8 @@ export class DexieDbClient extends Dexie implements DbClient {
 
     return {
       ...product,
-      id: id ?? 0,
-      product_id: product.product_id ?? id ?? 0,
+      id,
+      product_id: product.product_id ?? id,
       categoryId,
       category_id: categoryId,
       createdAt,
@@ -301,7 +316,7 @@ export class DexieDbClient extends Dexie implements DbClient {
     createProduct: async (data) => {
       await this.ensureBarcodeUnique(data.barcode ?? data["barcode" as keyof typeof data]);
       const now = nowIso();
-      const base = this.normalizeProduct({
+      const base: Product = {
         ...data,
         is_active: data.is_active ?? true,
         stock_qty: data.stock_qty ?? 0,
@@ -310,7 +325,7 @@ export class DexieDbClient extends Dexie implements DbClient {
         updatedAt: (data as any).updatedAt ?? (data as any).updated_at ?? now,
         created_at: (data as any).created_at ?? now,
         updated_at: (data as any).updated_at ?? now,
-      } as Product);
+      } as Product;
 
       const id = await this.productsTable.add(base as Product);
       return this.normalizeProduct({ ...base, id, product_id: id } as Product);

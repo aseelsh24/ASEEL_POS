@@ -107,39 +107,48 @@ export default function PosPage() {
     }
   }
 
-  function resolveProductIdentity(product: Product) {
+  function resolveProductIdentity(
+    product: Product,
+  ): { productInfo?: { productId: number; name: string; barcode?: string; unitPrice: number }; error?: string } {
     const rawId = (product as any).product_id ?? (product as any).productId ?? product.id
-    const id = rawId != null ? Number(rawId) : NaN
+
+    if (rawId === null || rawId === undefined) {
+      return { error: 'لا يمكن إضافة المنتج لأن معرفه مفقود' }
+    }
+
+    const id = Number(rawId)
     if (!Number.isFinite(id) || id <= 0) {
-      return null
+      return { error: 'معرف المنتج غير صالح' }
     }
 
     return {
-      productId: id,
-      name: product.name ?? 'منتج',
-      barcode: product.barcode ?? undefined,
-      unitPrice: Number(product.sale_price) || 0,
+      productInfo: {
+        productId: id,
+        name: product.name ?? 'منتج',
+        barcode: product.barcode ?? undefined,
+        unitPrice: Number(product.sale_price) || 0,
+      },
     }
   }
 
   function addProductToCart(product: Product) {
-    const baseInfo = resolveProductIdentity(product)
-    if (!baseInfo) {
-      setError('تعذر تحديد المنتج لإضافته إلى السلة')
+    const { productInfo, error: identityError } = resolveProductIdentity(product)
+    if (!productInfo) {
+      setError(identityError ?? 'تعذر تحديد المنتج لإضافته إلى السلة')
       return
     }
 
     setCartLines((prev) => {
-      const existing = prev.find((line) => line.productId === baseInfo.productId)
+      const existing = prev.find((line) => line.productId === productInfo.productId)
       if (existing) {
         return prev.map((line) =>
-          line.productId === baseInfo.productId
+          line.productId === productInfo.productId
             ? { ...line, quantity: line.quantity + 1 }
             : line,
         )
       }
       const newLine: CartLine = {
-        ...baseInfo,
+        ...productInfo,
         quantity: 1,
         discountAmount: 0,
       }
