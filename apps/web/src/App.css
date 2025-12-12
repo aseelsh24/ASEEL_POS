@@ -125,6 +125,43 @@
   border: 1px solid #fecdd3;
 }
 
+.idle-lock-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 1rem;
+}
+
+.idle-lock-card {
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 14px;
+  padding: 1.5rem;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
+  display: grid;
+  gap: 0.75rem;
+}
+
+.idle-lock-card h2 {
+  margin: 0;
+}
+
+.idle-lock-card p {
+  margin: 0;
+  color: #334155;
+}
+
+.idle-lock-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
 .field-row {
   display: flex;
   justify-content: space-between;
