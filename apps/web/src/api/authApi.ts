@@ -22,3 +22,14 @@ export async function login(username: string, password: string): Promise<{ succe
     return { success: false, error: 'تعذر تسجيل الدخول حالياً' }
   }
 }
+
+export async function verifyPassword(username: string | undefined, password: string): Promise<boolean> {
+  if (!username) return false
+  try {
+    await ensureManagerSeeded()
+    return await appServices.usersService.verifyCredentials(username, password)
+  } catch (err) {
+    console.error('Password verification failed', err)
+    return false
+  }
+}
