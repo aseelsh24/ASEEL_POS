@@ -6,8 +6,12 @@ const DUPLICATE_BARCODE_CODE = 'DUPLICATE_BARCODE'
 
 function mapProductError(err: unknown): string {
   const code = (err as any)?.code
+  const message = (err as any)?.message
   if (code === DUPLICATE_BARCODE_CODE) {
     return 'الباركود مستخدم بالفعل لمنتج آخر'
+  }
+  if (typeof message === 'string' && message.trim().length > 0) {
+    return message
   }
   return 'تعذر حفظ المنتج. يرجى المحاولة مجدداً'
 }

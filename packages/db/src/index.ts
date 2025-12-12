@@ -301,8 +301,10 @@ export class DexieDbClient extends Dexie implements DbClient {
     createProduct: async (data) => {
       await this.ensureBarcodeUnique(data.barcode ?? data["barcode" as keyof typeof data]);
       const now = nowIso();
-      const base = this.normalizeProduct({
+      const base = {
         ...data,
+        id: undefined,
+        product_id: undefined,
         is_active: data.is_active ?? true,
         stock_qty: data.stock_qty ?? 0,
         min_stock_alert: data.min_stock_alert ?? 5,
@@ -310,10 +312,11 @@ export class DexieDbClient extends Dexie implements DbClient {
         updatedAt: (data as any).updatedAt ?? (data as any).updated_at ?? now,
         created_at: (data as any).created_at ?? now,
         updated_at: (data as any).updated_at ?? now,
-      } as Product);
+      } as Product;
 
       const id = await this.productsTable.add(base as Product);
-      return this.normalizeProduct({ ...base, id, product_id: id } as Product);
+      const stored = await this.productsTable.get(id);
+      return this.normalizeProduct({ ...(stored ?? base), id, product_id: id } as Product);
     },
     updateProduct: async (id, data) => {
       await this.ensureBarcodeUnique((data as any).barcode, id);
