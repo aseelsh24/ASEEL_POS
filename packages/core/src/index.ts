@@ -46,27 +46,36 @@ export interface Settings {
 }
 
 export interface Category {
-  category_id: ID;
+  id: ID;
   name: string;
-  description?: string | null;
-  created_at: string;
-  updated_at: string;
+  is_active: boolean;
+  createdAt: string;
+  updatedAt: string;
+  /** Legacy aliases kept for backward compatibility with earlier schema drafts. */
+  category_id?: ID;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Product {
-  product_id: ID;
+  id: ID;
   name: string;
   barcode?: string | null;
-  category_id?: ID | null;
+  categoryId?: ID | null;
   unit?: string | null;
   sale_price: number;
-  cost_price: number;
+  cost_price?: number | null;
   stock_qty: number;
   min_stock_alert: number;
   max_discount?: number | null;
   is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
+  /** Legacy aliases kept for backward compatibility with earlier schema drafts. */
+  product_id?: ID;
+  category_id?: ID | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Invoice {
