@@ -30,6 +30,7 @@ import {
   SalesReturnItem,
   Settings,
   StockMovement,
+  User,
 } from "../packages/core/src/index.js";
 import { UnitOfWork } from "../packages/db/src/index.js";
 
@@ -108,6 +109,36 @@ export class ValidationError extends DomainError {
 export class StockError extends DomainError {
   constructor(message: string) {
     super(message, "STOCK");
+  }
+}
+
+/* ===========================
+   Users Service
+   =========================== */
+
+export class UsersService {
+  constructor(private uow: UnitOfWork) {}
+
+  async getUserByUsername(username: string): Promise<User | null> {
+    return this.uow.users.getByUsername(username);
+  }
+
+  async createManagerIfMissing(): Promise<User> {
+    const existing = await this.uow.users.getAny();
+    if (existing) return existing;
+
+    return this.uow.users.createUser({
+      username: "admin",
+      password: "1234",
+      role: "manager",
+    });
+  }
+
+  async verifyCredentials(username: string, password: string): Promise<boolean> {
+    const user = await this.uow.users.getByUsername(username);
+    if (!user) return false;
+
+    return user.password === password;
   }
 }
 
@@ -810,6 +841,7 @@ export class Services {
   public adjustments: AdjustmentService;
   public reports: ReportService;
   public backup: BackupService;
+  public users: UsersService;
 
   constructor(private uow: UnitOfWork) {
     this.ledger = new StockLedgerService(uow);
@@ -819,6 +851,7 @@ export class Services {
     this.adjustments = new AdjustmentService(uow);
     this.reports = new ReportService(uow);
     this.backup = new BackupService(uow);
+    this.users = new UsersService(uow);
   }
 }
 

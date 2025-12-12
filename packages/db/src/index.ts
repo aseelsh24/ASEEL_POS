@@ -82,8 +82,10 @@ export interface ReportsRepo {}
 
 export interface UsersRepo {
   getById(id: ID): Promise<User | null>;
+  getByUsername(username: string): Promise<User | null>;
+  getAny(): Promise<User | null>;
   list(): Promise<User[]>;
-  create(user: Omit<User, "user_id">): Promise<User>;
+  createUser(input: { username: string; password: string; role: string; display_name?: string | null }): Promise<User>;
 }
 
 export interface UnitOfWork {
@@ -288,14 +290,26 @@ export class DexieDbClient extends Dexie implements DbClient {
 
   users: UsersRepo = {
     getById: async (id) => (await this.usersTable.get(id)) ?? null,
+    getByUsername: async (username) => {
+      const rows = await this.usersTable.where("username").equals(username).toArray();
+      return rows[0] ?? null;
+    },
+    getAny: async () => (await this.usersTable.limit(1).toArray())[0] ?? null,
     list: () => this.usersTable.toArray(),
-    create: async (user) => {
-      const id = await this.usersTable.add({
-        ...user,
-        created_at: user.created_at ?? nowIso(),
-        updated_at: user.updated_at ?? nowIso(),
-      } as User);
-      return { ...user, user_id: id } as User;
+    createUser: async ({ username, password, role, display_name }) => {
+      const now = nowIso();
+      const user: Omit<User, "user_id"> = {
+        username,
+        password,
+        display_name: display_name ?? null,
+        role,
+        is_active: true,
+        created_at: now,
+        updated_at: now,
+      } as Omit<User, "user_id">;
+
+      const id = await this.usersTable.add(user as User);
+      return { ...user, user_id: id, id } as User;
     },
   };
 

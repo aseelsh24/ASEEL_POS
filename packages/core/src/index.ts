@@ -18,10 +18,16 @@ export type ReferenceType =
   | null;
 
 export interface User {
+  /**
+   * Optional generic id to align with external schemas while keeping the
+   * internal auto-incremented key (user_id) used by Dexie.
+   */
+  id?: ID;
   user_id: ID;
   username: string;
+  password: string;
   display_name?: string | null;
-  role?: string | null;
+  role: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;

@@ -13,11 +13,11 @@ const navItems = [
 ]
 
 function App() {
-  const { settingsInitialized } = useAppState()
+  const { settingsInitialized, auth } = useAppState()
 
   return (
     <div className="app-shell" dir="rtl">
-      {settingsInitialized && (
+      {settingsInitialized && auth.isAuthenticated && (
         <header className="app-header">
           <div className="app-title">ASEEL POS</div>
           <nav className="app-nav" aria-label="التنقل الرئيسي">
