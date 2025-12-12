@@ -47,6 +47,7 @@ export default function ProductsPage() {
   const [categoryError, setCategoryError] = useState<string | null>(null)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [showInactiveCategories, setShowInactiveCategories] = useState(false)
+
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [csvError, setCsvError] = useState<string | null>(null)
   const [csvSummary, setCsvSummary] = useState<{
@@ -271,7 +272,8 @@ export default function ProductsPage() {
     if (!id) return '—'
     const found = categoryLookup.get(Number(id))
     if (!found) return 'فئة غير معروفة'
-    return found.name + (found.is_active ? '' : ' (غير نشطة)')
+    return found.name + (found.is_active ? '' : ' (غير نشطة)'
+    )
   }
 
   return (
