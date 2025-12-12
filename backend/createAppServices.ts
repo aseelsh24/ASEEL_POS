@@ -5,6 +5,7 @@ import {
   ReturnService,
   SettingsService,
   StockLedgerService,
+  CatalogService,
   UsersService,
 } from "./ServiceLayer_POS_Grocery_MVP.ts";
 
@@ -19,6 +20,7 @@ export function createAppServices() {
     invoiceService: new InvoiceService(uow),
     purchaseService: new PurchaseService(uow),
     returnService: new ReturnService(uow),
+    catalogService: new CatalogService(uow),
     usersService: new UsersService(uow),
   };
 }
