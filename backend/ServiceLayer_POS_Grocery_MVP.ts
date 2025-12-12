@@ -14,148 +14,23 @@
  * هذا Skeleton مقصود أن يكون واضحاً وقابلاً للتوسع وليس نهائياً بكل التفاصيل التنفيذية.
  */
 
-/* ===========================
-   Domain Types (مختصر)
-   =========================== */
-
-export type ID = number;
-
-export type PaymentMethod = "CASH" | "CREDIT";
-export type PaymentStatus = "PAID" | "UNPAID";
-
-export type MovementType =
-  | "PURCHASE"
-  | "SALE"
-  | "SALES_RETURN"
-  | "ADJUSTMENT"
-  | "OPENING_BALANCE";
-
-export type ReferenceType =
-  | "INVOICE"
-  | "PURCHASE"
-  | "SALES_RETURN"
-  | "ADJUSTMENT"
-  | null;
-
-export interface Product {
-  product_id: ID;
-  name: string;
-  barcode?: string | null;
-  category_id?: ID | null;
-  unit?: string | null;
-  sale_price: number;
-  cost_price: number;
-  stock_qty: number;
-  min_stock_alert: number;
-  max_discount?: number | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Invoice {
-  invoice_id: ID;
-  invoice_number: string;
-  datetime: string;
-  cashier_user_id: ID;
-  subtotal: number;
-  total_discount: number;
-  rounding_adjustment: number;
-  grand_total: number;
-  payment_method: PaymentMethod;
-  payment_status: PaymentStatus;
-  customer_name?: string | null;
-  notes?: string | null;
-  is_cancelled: boolean;
-  cancelled_by_user_id?: ID | null;
-  cancelled_at?: string | null;
-  device_id?: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface InvoiceItem {
-  invoice_item_id: ID;
-  invoice_id: ID;
-  product_id: ID;
-  qty: number;
-  unit_price: number;
-  discount: number;
-  line_total: number;
-  created_at: string;
-}
-
-export interface Purchase {
-  purchase_id: ID;
-  purchase_number: string;
-  supplier_name: string;
-  datetime: string;
-  received_by_user_id: ID;
-  total_cost: number;
-  notes?: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface PurchaseItem {
-  purchase_item_id: ID;
-  purchase_id: ID;
-  product_id: ID;
-  qty: number;
-  cost_price: number;
-  line_total: number;
-  created_at: string;
-}
-
-export interface SalesReturn {
-  sales_return_id: ID;
-  return_number: string;
-  original_invoice_id: ID;
-  datetime: string;
-  processed_by_user_id: ID;
-  total_refund: number;
-  reason: string;
-  notes?: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface SalesReturnItem {
-  sales_return_item_id: ID;
-  sales_return_id: ID;
-  product_id: ID;
-  qty: number;
-  unit_price: number;
-  discount: number;
-  line_total: number;
-  created_at: string;
-}
-
-export interface StockMovement {
-  movement_id: ID;
-  datetime: string;
-  type: MovementType;
-  product_id: ID;
-  qty_change: number;
-  new_balance: number;
-  reference_type?: ReferenceType;
-  reference_id?: ID | null;
-  user_id: ID;
-  notes?: string | null;
-  created_at: string;
-}
-
-export interface Settings {
-  settings_id: 1;
-  store_name: string;
-  currency_code: string;
-  rounding_mode: "NEAREST" | "NONE" | "CUSTOM";
-  idle_lock_minutes: number;
-  auto_print: boolean;
-  last_backup_at?: string | null;
-  created_at: string;
-  updated_at: string;
-}
+import {
+  ID,
+  Invoice,
+  InvoiceItem,
+  MovementType,
+  PaymentMethod,
+  PaymentStatus,
+  Product,
+  Purchase,
+  PurchaseItem,
+  ReferenceType,
+  SalesReturn,
+  SalesReturnItem,
+  Settings,
+  StockMovement,
+} from "../packages/core/src/index.js";
+import { UnitOfWork } from "../packages/db/src/index.js";
 
 /* ===========================
    Utility Types
@@ -240,93 +115,6 @@ export class StockError extends DomainError {
    =========================== */
 
 export const nowIso = () => new Date().toISOString();
-
-/* ===========================
-   Repository Interfaces
-   (تنفذها لاحقاً لـ SQLite أو Dexie)
-   =========================== */
-
-export interface ProductsRepo {
-  getById(id: ID): Promise<Product | null>;
-  getByIds(ids: ID[]): Promise<Product[]>;
-  getByBarcode(barcode: string): Promise<Product | null>;
-  searchByName(query: string, limit?: number): Promise<Product[]>;
-  insert(p: Omit<Product, "product_id">): Promise<Product>;
-  update(id: ID, patch: Partial<Product>): Promise<Product>;
-}
-
-export interface InvoicesRepo {
-  generateInvoiceNumber(): Promise<string>;
-  insertInvoice(inv: Omit<Invoice, "invoice_id">): Promise<Invoice>;
-  insertItems(items: Omit<InvoiceItem, "invoice_item_id">[]): Promise<InvoiceItem[]>;
-  getById(id: ID): Promise<Invoice | null>;
-  getItems(invoice_id: ID): Promise<InvoiceItem[]>;
-  markCancelled(input: {
-    invoice_id: ID;
-    cancelled_by_user_id: ID;
-    cancelled_at: string;
-  }): Promise<void>;
-  listByDateRange(startIso: string, endIso: string): Promise<Invoice[]>;
-}
-
-export interface PurchasesRepo {
-  generatePurchaseNumber(): Promise<string>;
-  insertPurchase(p: Omit<Purchase, "purchase_id">): Promise<Purchase>;
-  insertItems(items: Omit<PurchaseItem, "purchase_item_id">[]): Promise<PurchaseItem[]>;
-  getById(id: ID): Promise<Purchase | null>;
-  getItems(purchase_id: ID): Promise<PurchaseItem[]>;
-  listByDateRange(startIso: string, endIso: string): Promise<Purchase[]>;
-}
-
-export interface SalesReturnsRepo {
-  generateReturnNumber(): Promise<string>;
-  insertReturn(r: Omit<SalesReturn, "sales_return_id">): Promise<SalesReturn>;
-  insertItems(items: Omit<SalesReturnItem, "sales_return_item_id">[]): Promise<SalesReturnItem[]>;
-  getById(id: ID): Promise<SalesReturn | null>;
-  getItems(sales_return_id: ID): Promise<SalesReturnItem[]>;
-}
-
-export interface MovementsRepo {
-  insertMany(movs: Omit<StockMovement, "movement_id">[]): Promise<void>;
-  listForProduct(product_id: ID, startIso?: string, endIso?: string): Promise<StockMovement[]>;
-}
-
-export interface SettingsRepo {
-  get(): Promise<Settings>;
-  update(patch: Partial<Settings>): Promise<Settings>;
-}
-
-export interface BackupRepo {
-  exportBackupBlob(): Promise<Blob | Uint8Array | string>;
-  saveAutoBackup(meta?: { createdAt: string }): Promise<void>;
-  rotateAutoBackups(maxKeep: number): Promise<void>;
-}
-
-export interface ReportsRepo {
-  // يمكن أن تكون Query-level shortcuts، أو تبقى فارغة وتُنفذ بالحساب داخل الخدمة.
-}
-
-/* ===========================
-   Transaction / Unit of Work
-   =========================== */
-
-export interface UnitOfWork {
-  products: ProductsRepo;
-  invoices: InvoicesRepo;
-  purchases: PurchasesRepo;
-  returns: SalesReturnsRepo;
-  movements: MovementsRepo;
-  settings: SettingsRepo;
-  backup: BackupRepo;
-  reports: ReportsRepo;
-
-  /**
-   * ينفذ callback في سياق Transaction إن كانت قاعدة البيانات تدعم ذلك.
-   * - في SQLite: BEGIN/COMMIT/ROLLBACK
-   * - في Dexie: dexie.transaction(...)
-   */
-  runInTransaction<T>(fn: (tx: UnitOfWork) => Promise<T>): Promise<T>;
-}
 
 /* ===========================
    Calculation helpers
