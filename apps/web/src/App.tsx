@@ -2,6 +2,8 @@ import { NavLink } from 'react-router-dom'
 import { AppRouter } from './router'
 import './App.css'
 import { useAppState } from './state/AppStateProvider'
+import { IdleLockOverlay } from './components/IdleLockOverlay'
+import { useIdleLock } from './state/useIdleLock'
 
 const navItems = [
   { path: '/pos', label: 'نقطة البيع' },
@@ -14,9 +16,11 @@ const navItems = [
 
 function App() {
   const { settingsInitialized, auth } = useAppState()
+  useIdleLock()
 
   return (
     <div className="app-shell" dir="rtl">
+      <IdleLockOverlay />
       {settingsInitialized && auth.isAuthenticated && (
         <header className="app-header">
           <div className="app-title">ASEEL POS</div>
