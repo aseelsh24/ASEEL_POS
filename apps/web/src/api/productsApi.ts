@@ -9,6 +9,9 @@ function mapProductError(err: unknown): string {
   if (code === DUPLICATE_BARCODE_CODE) {
     return 'الباركود مستخدم بالفعل لمنتج آخر'
   }
+  if ((err as any)?.name === 'ConstraintError') {
+    return 'تعذر حفظ المنتج بسبب تعارض داخلي في قاعدة البيانات المحلية. حاول إعادة المحاولة أو إعادة تهيئة البيانات.'
+  }
   return 'تعذر حفظ المنتج. يرجى المحاولة مجدداً'
 }
 
