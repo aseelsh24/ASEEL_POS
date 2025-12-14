@@ -521,6 +521,15 @@ export class StockLedgerService {
       await tx.products.update(pid, { stock_qty: newBal, updated_at: now });
     }
   }
+
+  async getLedger(product_id: ID, startIso?: string, endIso?: string, type?: MovementType) {
+    const movements = await this.uow.movements.listForProduct(product_id, startIso, endIso);
+    if (type) {
+      return movements.filter((m) => m.type === type);
+    }
+    // Sort descending by date (newest first)
+    return movements.sort((a, b) => (b.datetime > a.datetime ? 1 : -1));
+  }
 }
 
 /* ===========================
