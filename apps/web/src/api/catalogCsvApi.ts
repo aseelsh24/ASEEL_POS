@@ -151,21 +151,27 @@ export async function importProductsFromCsv(rows: ParsedCsvRow[]): Promise<Impor
       continue
     }
 
-    const barcode = values.barcode?.trim() || undefined
-    const categoryId = await ensureCategoryId(values.category_name, categoriesByName)
-    const payload = {
-      name,
-      barcode,
-      categoryId,
-      sale_price: salePriceNum,
-      cost_price: parseNumber(values.cost_price),
-      unit: values.unit?.trim() || undefined,
-      min_stock_alert: parseNumber(values.min_stock_alert),
-      max_discount: parseNumber(values.max_discount),
-      is_active: parseBoolean(values.is_active),
-    }
-
     try {
+      const barcode = values.barcode?.trim() || undefined
+      const categoryId = await ensureCategoryId(values.category_name, categoriesByName)
+
+      // Sanitize payload: never pass ID to creation to avoid ConstraintError
+      const payload: any = {
+        name,
+        barcode,
+        categoryId,
+        sale_price: salePriceNum,
+        cost_price: parseNumber(values.cost_price),
+        unit: values.unit?.trim() || undefined,
+        min_stock_alert: parseNumber(values.min_stock_alert),
+        max_discount: parseNumber(values.max_discount),
+        is_active: parseBoolean(values.is_active),
+      }
+      // Explicitly remove any ID fields if they somehow got in (though they shouldn't with above construction)
+      delete payload.id
+      delete payload.product_id
+      delete payload.productId
+
       if (barcode) {
         const existing = await findProductByBarcode(barcode)
         const existingId = existing?.id ?? (existing as any)?.product_id

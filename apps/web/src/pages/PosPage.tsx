@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Product } from '@core/index'
 import { fetchProducts } from '../api/productsApi'
 import { createSale } from '../api/posApi'
+import { resolveProductIdentity } from '../utils/productUtils'
 
 type CartLine = {
   productId: number
@@ -108,33 +109,33 @@ export default function PosPage() {
   }
 
   function addProductToCart(product: Product) {
-    const id = product.id ?? (product as any).product_id
-    if (!id) return
+    const baseInfo = resolveProductIdentity(product)
+    if (!baseInfo) {
+      setError('تعذر تحديد المنتج لإضافته إلى السلة (المعرف مفقود أو غير صالح)')
+      return
+    }
 
     setCartLines((prev) => {
-      const existing = prev.find((line) => line.productId === id)
+      const existing = prev.find((line) => line.productId === baseInfo.productId)
       if (existing) {
         return prev.map((line) =>
-          line.productId === id ? { ...line, quantity: line.quantity + 1 } : line,
+          line.productId === baseInfo.productId
+            ? { ...line, quantity: line.quantity + 1 }
+            : line,
         )
       }
-      return [
-        ...prev,
-        {
-          productId: id,
-          name: product.name ?? 'منتج',
-          barcode: product.barcode ?? undefined,
-          unitPrice: Number(product.sale_price) || 0,
-          quantity: 1,
-          discountAmount: 0,
-        },
-      ]
+      const newLine: CartLine = {
+        ...baseInfo,
+        quantity: 1,
+        discountAmount: 0,
+      }
+      return [...prev, newLine]
     })
     setSuccessMessage(null)
     setError(null)
   }
 
-  function handleQuantityChange(productId: number, value: number) {
+  function updateLineQuantity(productId: number, value: number) {
     if (Number.isNaN(value) || value <= 0) return
     setCartLines((prev) =>
       prev.map((line) => {
@@ -146,7 +147,7 @@ export default function PosPage() {
     )
   }
 
-  function handleDiscountChange(productId: number, value: number) {
+  function updateLineDiscount(productId: number, value: number) {
     if (Number.isNaN(value) || value < 0) return
     setCartLines((prev) =>
       prev.map((line) => {
@@ -333,7 +334,7 @@ export default function PosPage() {
                           type="number"
                           min={1}
                           value={line.quantity}
-                          onChange={(e) => handleQuantityChange(line.productId, Number(e.target.value))}
+                          onChange={(e) => updateLineQuantity(line.productId, Number(e.target.value))}
                           style={{ width: '90px' }}
                         />
                       </td>
@@ -343,18 +344,18 @@ export default function PosPage() {
                           type="number"
                           min={0}
                           value={line.discountAmount}
-                          onChange={(e) => handleDiscountChange(line.productId, Number(e.target.value))}
+                          onChange={(e) => updateLineDiscount(line.productId, Number(e.target.value))}
                           style={{ width: '110px' }}
                         />
                       </td>
                       <td>{currencyFormatter.format(Math.max(0, line.quantity * line.unitPrice - line.discountAmount))}</td>
                       <td className="actions-cell">
-                        <button type="button" onClick={() => handleQuantityChange(line.productId, line.quantity + 1)}>
+                        <button type="button" onClick={() => updateLineQuantity(line.productId, line.quantity + 1)}>
                           +
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleQuantityChange(line.productId, Math.max(1, line.quantity - 1))}
+                          onClick={() => updateLineQuantity(line.productId, Math.max(1, line.quantity - 1))}
                           className="secondary"
                         >
                           -
