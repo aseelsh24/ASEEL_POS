@@ -301,8 +301,12 @@ export class DexieDbClient extends Dexie implements DbClient {
     createProduct: async (data) => {
       await this.ensureBarcodeUnique(data.barcode ?? data["barcode" as keyof typeof data]);
       const now = nowIso();
+
+      // Ensure no ID is present to allow autoIncrement
+      const { id, product_id, productId, ...rest } = data as any;
+
       const base = this.normalizeProduct({
-        ...data,
+        ...rest,
         is_active: data.is_active ?? true,
         stock_qty: data.stock_qty ?? 0,
         min_stock_alert: data.min_stock_alert ?? 5,
@@ -312,8 +316,12 @@ export class DexieDbClient extends Dexie implements DbClient {
         updated_at: (data as any).updated_at ?? now,
       } as Product);
 
-      const id = await this.productsTable.add(base as Product);
-      return this.normalizeProduct({ ...base, id, product_id: id } as Product);
+      // Double check - normalizeProduct might re-add id if it defaults to 0
+      // We must pass an object WITHOUT id to .add() for autoIncrement to work
+      const { id: _, product_id: __, ...toInsert } = base as any;
+
+      const newId = await this.productsTable.add(toInsert as Product);
+      return this.normalizeProduct({ ...base, id: newId, product_id: newId } as Product);
     },
     updateProduct: async (id, data) => {
       await this.ensureBarcodeUnique((data as any).barcode, id);
