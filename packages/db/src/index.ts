@@ -83,6 +83,7 @@ export interface SettingsRepo {
 
 export interface BackupRepo {
   exportBackupBlob(): Promise<Blob | Uint8Array | string>;
+  importBackup(jsonString: string): Promise<void>;
   saveAutoBackup(meta?: { createdAt: string }): Promise<void>;
   rotateAutoBackups(maxKeep: number): Promise<void>;
 }
@@ -432,7 +433,52 @@ export class DexieDbClient extends Dexie implements DbClient {
   };
 
   backup: BackupRepo = {
-    exportBackupBlob: async () => "TODO: backup blob",
+    exportBackupBlob: async () => {
+      const data: Record<string, any[]> = {};
+
+      // Iterate dynamically over all tables in the database
+      for (const table of this.tables) {
+        data[table.name] = await table.toArray();
+      }
+
+      const backup = {
+        meta: {
+          version: 1,
+          exportedAtISO: new Date().toISOString(),
+          dbVersion: this.verno,
+        },
+        tables: data,
+      };
+
+      const json = JSON.stringify(backup, null, 2);
+      return new Blob([json], { type: "application/json" });
+    },
+
+    importBackup: async (jsonString: string) => {
+      let backup;
+      try {
+        backup = JSON.parse(jsonString);
+      } catch (e) {
+        throw new Error("Invalid JSON file");
+      }
+
+      if (!backup || !backup.meta || !backup.tables) {
+        throw new Error("Invalid backup format");
+      }
+
+      await this.transaction("rw", this.tables, async () => {
+        // Clear all tables first dynamically
+        for (const table of this.tables) {
+          await table.clear();
+
+          const rows = backup.tables[table.name];
+          if (rows && Array.isArray(rows)) {
+            await table.bulkPut(rows);
+          }
+        }
+      });
+    },
+
     saveAutoBackup: async () => {},
     rotateAutoBackups: async () => {},
   };
