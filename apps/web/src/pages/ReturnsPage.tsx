@@ -204,114 +204,99 @@ export default function ReturnsPage() {
     <section>
       <header className="page-header">
         <div>
-          <h1>مرتجعات المبيعات</h1>
+          <h1 className="page-title">مرتجعات المبيعات</h1>
           <p className="muted">إرجاع أصناف من فواتير سابقة مع تعديل المخزون.</p>
         </div>
       </header>
 
-      <div className="grid-layout">
-        <div className="card">
-          <div className="card-header">
-            <h2>بحث عن الفاتورة</h2>
-          </div>
-          <div className="form-grid">
-            <div className="form-field">
-              <label htmlFor="invoiceNumber">رقم الفاتورة</label>
-              <input
-                id="invoiceNumber"
-                type="text"
-                value={invoiceNumber}
-                onChange={(e) => setInvoiceNumber(e.target.value)}
-                placeholder="مثال: INV-123"
-              />
+      <div className="grid grid-cols-1 md-grid-cols-2 lg-grid-cols-3 gap-6">
+
+        {/* Search Invoice - Column 1 */}
+        <div className="d-flex flex-col gap-6">
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">بحث عن الفاتورة</h2>
             </div>
-            <div className="form-actions">
-              <button onClick={handleSearchInvoice} disabled={searchLoading}>
-                {searchLoading ? 'جارِ البحث...' : 'بحث عن الفاتورة'}
-              </button>
+            <div className="form-group">
+              <label className="form-label" htmlFor="invoiceNumber">رقم الفاتورة</label>
+              <div className="d-flex gap-2">
+                <input
+                  id="invoiceNumber"
+                  className="form-input"
+                  type="text"
+                  value={invoiceNumber}
+                  onChange={(e) => setInvoiceNumber(e.target.value)}
+                  placeholder="مثال: INV-123"
+                />
+                <button className="btn btn-primary" onClick={handleSearchInvoice} disabled={searchLoading}>
+                  {searchLoading ? '...' : 'بحث'}
+                </button>
+              </div>
             </div>
-            {searchError && <div className="error-text">{searchError}</div>}
+            {searchError && <div className="error-text mt-2">{searchError}</div>}
 
             {invoiceData && (
-              <div className="card" aria-live="polite">
-                <div className="card-header">
-                  <h3>بيانات الفاتورة</h3>
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="d-flex justify-between items-center mb-3">
+                  <h3 className="font-bold text-lg">بيانات الفاتورة</h3>
                   <span className="badge badge-muted">{invoiceData.invoice.invoice_number}</span>
                 </div>
-                <div className="grid-layout" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+                <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <strong>التاريخ</strong>
+                    <strong className="block muted">التاريخ</strong>
                     <div>{new Date(invoiceData.invoice.datetime).toLocaleString('ar-EG')}</div>
                   </div>
                   <div>
-                    <strong>الإجمالي</strong>
+                    <strong className="block muted">الإجمالي</strong>
                     <div>{invoiceData.invoice.grand_total?.toFixed(2) ?? '-'}</div>
                   </div>
                   <div>
-                    <strong>عدد الأصناف</strong>
+                    <strong className="block muted">عدد الأصناف</strong>
                     <div>{invoiceData.items.length}</div>
                   </div>
-                </div>
-                <div className="table-responsive" style={{ marginTop: '0.75rem' }}>
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>المنتج</th>
-                        <th>الكمية الأصلية</th>
-                        <th>كمية مرتجعة سابقاً</th>
-                        <th>المتاح للإرجاع</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {invoiceData.items.map((item) => {
-                        const available = Math.max(0, item.qty - item.alreadyReturnedQty)
-                        return (
-                          <tr key={item.invoiceItemId}>
-                            <td>{item.productName}</td>
-                            <td>{item.qty}</td>
-                            <td>{item.alreadyReturnedQty}</td>
-                            <td>{available}</td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
                 </div>
               </div>
             )}
           </div>
         </div>
 
+        {/* Return Details - Column 2 */}
         <div className="card">
           <div className="card-header">
-            <h2>تفاصيل المرتجع</h2>
+            <h2 className="card-title">تفاصيل المرتجع</h2>
           </div>
           {!invoiceData ? (
-            <p className="muted">يرجى البحث عن فاتورة للبدء.</p>
+            <div className="d-flex items-center justify-center h-48 text-center muted bg-gray-50 rounded-lg border border-dashed border-gray-300">
+              <p>يرجى البحث عن فاتورة للبدء.</p>
+            </div>
           ) : (
-            <div className="form-grid">
-              <div className="table-responsive">
-                <table className="data-table">
+            <div className="d-flex flex-col gap-4">
+              <div className="table-container" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                <table className="table">
                   <thead>
                     <tr>
                       <th>المنتج</th>
-                      <th>المتاح للإرجاع</th>
-                      <th>كمية للإرجاع</th>
+                      <th>المتاح</th>
+                      <th>للإرجاع</th>
                     </tr>
                   </thead>
                   <tbody>
                     {returnLines.map((line) => (
                       <tr key={line.invoiceLineId}>
-                        <td>{line.name}</td>
+                        <td>
+                           <div className="font-bold">{line.name}</div>
+                           <div className="text-xs muted">سعر الوحدة: {line.unitPrice}</div>
+                        </td>
                         <td>{line.maxReturnableQty}</td>
                         <td>
                           <input
                             type="number"
+                            className="form-input p-1"
                             min={0}
                             max={line.maxReturnableQty}
                             value={line.returnQty}
                             onChange={(e) => handleReturnQtyChange(line.invoiceLineId, e.target.value)}
-                            style={{ width: '120px' }}
+                            style={{ width: '80px' }}
                           />
                         </td>
                       </tr>
@@ -320,10 +305,11 @@ export default function ReturnsPage() {
                 </table>
               </div>
 
-              <div className="form-field">
-                <label htmlFor="returnReason">سبب الإرجاع</label>
+              <div className="form-group">
+                <label className="form-label" htmlFor="returnReason">سبب الإرجاع</label>
                 <input
                   id="returnReason"
+                  className="form-input"
                   type="text"
                   value={returnReason}
                   onChange={(e) => setReturnReason(e.target.value)}
@@ -331,135 +317,128 @@ export default function ReturnsPage() {
                 />
               </div>
 
-              <div className="grid-layout" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+              <div className="bg-gray-50 p-3 rounded-lg d-flex justify-between items-center text-sm">
                 <div>
-                  <strong>إجمالي الكمية المرتجعة</strong>
-                  <div>{totalReturnQty}</div>
+                  <strong>الكمية:</strong> {totalReturnQty}
                 </div>
                 <div>
-                  <strong>قيمة المرتجع التقديرية</strong>
-                  <div>{totalReturnValue.toFixed(2)}</div>
+                  <strong>القيمة المستردة:</strong> {totalReturnValue.toFixed(2)}
                 </div>
               </div>
 
               {saveError && <div className="error-text">{saveError}</div>}
-              {successMessage && <div className="badge badge-success">{successMessage}</div>}
+              {successMessage && <div className="badge badge-success w-full justify-center p-2 text-sm">{successMessage}</div>}
 
-              <div className="form-actions">
-                <button onClick={handleSubmitReturn} disabled={submitLoading}>
-                  {submitLoading ? 'جارِ التسجيل...' : 'تسجيل المرتجع'}
-                </button>
-              </div>
+              <button className="btn btn-primary w-full" onClick={handleSubmitReturn} disabled={submitLoading}>
+                {submitLoading ? 'جارِ التسجيل...' : 'تسجيل المرتجع'}
+              </button>
             </div>
           )}
         </div>
 
+        {/* Stock Adjustments - Column 3 */}
         <div className="card">
           <div className="card-header">
             <div>
-              <h2>تسويات المخزون</h2>
-              <p className="muted">تعديل الكمية يدويًا في حالات التلف أو الفقد أو التصحيح.</p>
+              <h2 className="card-title">تسويات المخزون</h2>
+              <p className="muted text-sm">تعديل الكمية يدويًا (تلف، فقد، جرد).</p>
             </div>
           </div>
 
-          <div className="form-grid">
-            <div className="form-field">
-              <label htmlFor="productSearch">بحث عن منتج</label>
-              <input
-                id="productSearch"
-                type="text"
-                value={productSearch}
-                onChange={(e) => setProductSearch(e.target.value)}
-                placeholder="اسم المنتج"
-              />
-              <div className="form-actions">
-                <button onClick={handleProductSearch} disabled={productSearchLoading}>
-                  {productSearchLoading ? 'جارِ البحث...' : 'بحث'}
+          <div className="d-flex flex-col gap-4">
+            <div className="form-group">
+              <label className="form-label" htmlFor="productSearch">بحث عن منتج</label>
+              <div className="d-flex gap-2">
+                <input
+                  id="productSearch"
+                  className="form-input"
+                  type="text"
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  placeholder="اسم المنتج"
+                />
+                <button className="btn btn-secondary" onClick={handleProductSearch} disabled={productSearchLoading}>
+                  بحث
                 </button>
               </div>
-              {productSearchError && <div className="error-text">{productSearchError}</div>}
-              {productResults.length > 0 && (
-                <div className="table-responsive">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>المنتج</th>
-                        <th>المخزون الحالي</th>
-                        <th>اختيار</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {productResults.map((p) => (
-                        <tr key={p.product_id ?? (p as any).id}>
-                          <td>{p.name}</td>
-                          <td>{p.stock_qty ?? 0}</td>
-                          <td>
-                            <button className="secondary" onClick={() => handleSelectProduct(p)}>
-                              اختيار
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              {productSearchError && <div className="error-text mt-2">{productSearchError}</div>}
             </div>
 
-            {selectedProduct && (
-              <div className="card" aria-live="polite">
-                <div className="card-header">
-                  <h3>المنتج المختار</h3>
-                  <span className="badge badge-muted">المخزون: {selectedProduct.stock_qty ?? 0}</span>
-                </div>
-                <div>{selectedProduct.name}</div>
-                {selectedProduct.barcode && <div className="muted">باركود: {selectedProduct.barcode}</div>}
+            {productResults.length > 0 && !selectedProduct && (
+              <div className="table-container" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                <table className="table">
+                  <tbody>
+                    {productResults.map((p) => (
+                      <tr key={p.product_id ?? (p as any).id}>
+                        <td>{p.name}</td>
+                        <td className="text-left" style={{ textAlign: 'left' }}>
+                          <button className="btn btn-ghost btn-sm" onClick={() => handleSelectProduct(p)}>
+                            اختيار
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
 
-            <div className="grid-layout" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-              <div className="form-field">
-                <label htmlFor="adjustReason">نوع التسوية</label>
-                <select
-                  id="adjustReason"
-                  value={adjustReason}
-                  onChange={(e) => setAdjustReason(e.target.value as AdjustmentReason)}
-                >
-                  <option value="DAMAGE">تلف</option>
-                  <option value="LOSS">فقد</option>
-                  <option value="INVENTORY_CORRECTION">تسوية جرد</option>
-                </select>
+            {selectedProduct && (
+              <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold text-indigo-900">{selectedProduct.name}</h3>
+                    <div className="text-sm text-indigo-700">المخزون الحالي: {selectedProduct.stock_qty ?? 0}</div>
+                  </div>
+                  <button className="text-indigo-500 hover:text-indigo-700" onClick={() => setSelectedProduct(null)}>✕</button>
+                </div>
               </div>
-              <div className="form-field">
-                <label htmlFor="adjustQty">الكمية</label>
-                <input
-                  id="adjustQty"
-                  type="number"
-                  value={adjustQty}
-                  onChange={(e) => setAdjustQty(e.target.value)}
-                  placeholder="مثال: 2 أو -1"
-                />
-              </div>
-              <div className="form-field">
-                <label htmlFor="adjustNote">ملاحظات</label>
-                <input
-                  id="adjustNote"
-                  type="text"
-                  value={adjustNote}
-                  onChange={(e) => setAdjustNote(e.target.value)}
-                  placeholder="اختياري"
-                />
-              </div>
+            )}
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="adjustReason">نوع التسوية</label>
+              <select
+                id="adjustReason"
+                className="form-select"
+                value={adjustReason}
+                onChange={(e) => setAdjustReason(e.target.value as AdjustmentReason)}
+              >
+                <option value="DAMAGE">تلف (خصم)</option>
+                <option value="LOSS">فقد (خصم)</option>
+                <option value="INVENTORY_CORRECTION">تسوية جرد (تعديل)</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="adjustQty">الكمية</label>
+              <input
+                id="adjustQty"
+                className="form-input"
+                type="number"
+                value={adjustQty}
+                onChange={(e) => setAdjustQty(e.target.value)}
+                placeholder={adjustReason === 'INVENTORY_CORRECTION' ? "أدخل الفرق (مثال: 5 أو -2)" : "أدخل الكمية المفقودة (مثال: 3)"}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="adjustNote">ملاحظات</label>
+              <input
+                id="adjustNote"
+                className="form-input"
+                type="text"
+                value={adjustNote}
+                onChange={(e) => setAdjustNote(e.target.value)}
+                placeholder="اختياري"
+              />
             </div>
 
             {adjustError && <div className="error-text">{adjustError}</div>}
-            {adjustSuccess && <div className="badge badge-success">{adjustSuccess}</div>}
+            {adjustSuccess && <div className="badge badge-success w-full justify-center p-2 text-sm">{adjustSuccess}</div>}
 
-            <div className="form-actions">
-              <button onClick={handleSubmitAdjustment} disabled={adjustLoading}>
-                {adjustLoading ? 'جارِ التسجيل...' : 'تسجيل التسوية'}
-              </button>
-            </div>
+            <button className="btn btn-primary w-full mt-2" onClick={handleSubmitAdjustment} disabled={adjustLoading}>
+              {adjustLoading ? 'جارِ التسجيل...' : 'تسجيل التسوية'}
+            </button>
           </div>
         </div>
       </div>

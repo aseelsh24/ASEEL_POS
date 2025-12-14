@@ -280,33 +280,32 @@ export default function ProductsPage() {
     <section className="catalog-page">
       <header className="page-header">
         <div>
-          <h1>إدارة الأصناف</h1>
+          <h1 className="page-title">إدارة الأصناف</h1>
           <p>إنشاء وتعديل المنتجات والفئات مع التحكم في التفعيل.</p>
         </div>
       </header>
 
-      <div className="grid-layout">
+      <div className="grid grid-cols-1 md-grid-cols-2 lg-grid-cols-4 lg-gap-8 gap-4">
+        {/* CSV Tools */}
         <div className="card">
           <div className="card-header">
-            <h2>أدوات CSV</h2>
+            <h2 className="card-title">أدوات CSV</h2>
             {csvLoading && <span className="muted">جارٍ المعالجة...</span>}
           </div>
-          <div className="csv-tools-grid">
-            <label className="form-field">
-              <span>ملف المنتجات (CSV)</span>
-              <input type="file" accept=".csv" onChange={(e) => setCsvFile(e.target.files?.[0] ?? null)} />
-            </label>
-            <div className="csv-actions">
-              <button type="button" onClick={handleCsvImport} disabled={csvLoading}>
-                استيراد من CSV
-              </button>
-              <button type="button" className="secondary" onClick={handleCsvExport} disabled={csvLoading}>
-                تصدير المنتجات إلى CSV
-              </button>
-            </div>
+          <div className="form-group">
+            <label className="form-label">ملف المنتجات (CSV)</label>
+            <input type="file" className="form-input" accept=".csv" onChange={(e) => setCsvFile(e.target.files?.[0] ?? null)} />
+          </div>
+          <div className="d-flex flex-col gap-2 mt-4">
+            <button type="button" className="btn btn-primary w-full" onClick={handleCsvImport} disabled={csvLoading}>
+              استيراد من CSV
+            </button>
+            <button type="button" className="btn btn-secondary w-full" onClick={handleCsvExport} disabled={csvLoading}>
+              تصدير المنتجات إلى CSV
+            </button>
           </div>
           {csvSummary && (
-            <div className="csv-summary">
+            <div className="csv-summary mt-4">
               <div className="muted">
                 تم إضافة {csvSummary.created} منتجات، تحديث {csvSummary.updated} منتجات، وتخطي {csvSummary.skipped} صف.
               </div>
@@ -319,35 +318,39 @@ export default function ProductsPage() {
               )}
             </div>
           )}
-          {csvError && <div className="error-text">{csvError}</div>}
+          {csvError && <div className="error-text mt-4">{csvError}</div>}
         </div>
 
+        {/* Filters */}
         <div className="card">
           <div className="card-header">
-            <h2>تصفية المنتجات</h2>
+            <h2 className="card-title">تصفية المنتجات</h2>
           </div>
-          <div className="filters-grid">
-            <label className="form-field">
-              <span>بحث بالاسم</span>
+          <div className="d-flex flex-col gap-4">
+            <div className="form-group">
+              <label className="form-label">بحث بالاسم</label>
               <input
+                className="form-input"
                 type="text"
                 value={filters.name}
                 onChange={(e) => setFilters((prev) => ({ ...prev, name: e.target.value }))}
                 placeholder="أدخل جزءاً من الاسم"
               />
-            </label>
-            <label className="form-field">
-              <span>بحث بالباركود</span>
+            </div>
+            <div className="form-group">
+              <label className="form-label">بحث بالباركود</label>
               <input
+                className="form-input"
                 type="text"
                 value={filters.barcode}
                 onChange={(e) => setFilters((prev) => ({ ...prev, barcode: e.target.value }))}
                 placeholder="123456789"
               />
-            </label>
-            <label className="form-field">
-              <span>الفئة</span>
+            </div>
+            <div className="form-group">
+              <label className="form-label">الفئة</label>
               <select
+                className="form-select"
                 value={filters.categoryId}
                 onChange={(e) => setFilters((prev) => ({ ...prev, categoryId: e.target.value }))}
               >
@@ -358,8 +361,8 @@ export default function ProductsPage() {
                   </option>
                 ))}
               </select>
-            </label>
-            <label className="form-field checkbox-field">
+            </div>
+            <label className="checkbox-field d-flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={filters.activeOnly}
@@ -370,105 +373,121 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        <div className="card">
+        {/* Product Form */}
+        <div className="card lg-col-span-2">
           <div className="card-header">
-            <h2>{editingId ? 'تعديل منتج' : 'إضافة منتج جديد'}</h2>
+            <h2 className="card-title">{editingId ? 'تعديل منتج' : 'إضافة منتج جديد'}</h2>
           </div>
-          <form className="form-grid" onSubmit={handleProductSubmit}>
-            <label className="form-field">
-              <span>اسم المنتج *</span>
-              <input
-                required
-                value={productForm.name}
-                onChange={(e) => setProductForm((prev) => ({ ...prev, name: e.target.value }))}
-              />
-            </label>
-            <label className="form-field">
-              <span>الباركود</span>
-              <input
-                value={productForm.barcode}
-                onChange={(e) => setProductForm((prev) => ({ ...prev, barcode: e.target.value }))}
-                placeholder="اختياري"
-              />
-            </label>
-            <label className="form-field">
-              <span>الفئة</span>
-              <select
-                value={productForm.categoryId}
-                onChange={(e) => setProductForm((prev) => ({ ...prev, categoryId: e.target.value }))}
-              >
-                <option value="">بدون فئة</option>
-                {categoryOptions.map((cat) => (
-                  <option key={cat.id ?? (cat as any).category_id} value={cat.id ?? (cat as any).category_id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="form-field">
-              <span>سعر البيع *</span>
-              <input
-                type="number"
-                min="0"
-                required
-                value={productForm.sale_price}
-                onChange={(e) => setProductForm((prev) => ({ ...prev, sale_price: e.target.value }))}
-              />
-            </label>
-            <label className="form-field">
-              <span>سعر التكلفة</span>
-              <input
-                type="number"
-                min="0"
-                value={productForm.cost_price}
-                onChange={(e) => setProductForm((prev) => ({ ...prev, cost_price: e.target.value }))}
-              />
-            </label>
-            <label className="form-field">
-              <span>الوحدة</span>
-              <input
-                value={productForm.unit}
-                onChange={(e) => setProductForm((prev) => ({ ...prev, unit: e.target.value }))}
-                placeholder="قطعة / علبة ..."
-              />
-            </label>
-            <label className="form-field">
-              <span>حد تنبيه المخزون</span>
-              <input
-                type="number"
-                min="0"
-                value={productForm.min_stock_alert}
-                onChange={(e) => setProductForm((prev) => ({ ...prev, min_stock_alert: e.target.value }))}
-              />
-            </label>
-            <label className="form-field">
-              <span>أقصى خصم مسموح</span>
-              <input
-                type="number"
-                min="0"
-                value={productForm.max_discount}
-                onChange={(e) => setProductForm((prev) => ({ ...prev, max_discount: e.target.value }))}
-              />
-            </label>
-            {productError && <div className="error-text">{productError}</div>}
-            <div className="form-actions">
-              <button type="submit">{editingId ? 'تحديث المنتج' : 'حفظ المنتج'}</button>
+          <form onSubmit={handleProductSubmit}>
+            <div className="grid grid-cols-1 md-grid-cols-2 gap-4">
+              <div className="form-group">
+                <label className="form-label">اسم المنتج *</label>
+                <input
+                  className="form-input"
+                  required
+                  value={productForm.name}
+                  onChange={(e) => setProductForm((prev) => ({ ...prev, name: e.target.value }))}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">الباركود</label>
+                <input
+                  className="form-input"
+                  value={productForm.barcode}
+                  onChange={(e) => setProductForm((prev) => ({ ...prev, barcode: e.target.value }))}
+                  placeholder="اختياري"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">الفئة</label>
+                <select
+                  className="form-select"
+                  value={productForm.categoryId}
+                  onChange={(e) => setProductForm((prev) => ({ ...prev, categoryId: e.target.value }))}
+                >
+                  <option value="">بدون فئة</option>
+                  {categoryOptions.map((cat) => (
+                    <option key={cat.id ?? (cat as any).category_id} value={cat.id ?? (cat as any).category_id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">سعر البيع *</label>
+                <input
+                  className="form-input"
+                  type="number"
+                  min="0"
+                  required
+                  value={productForm.sale_price}
+                  onChange={(e) => setProductForm((prev) => ({ ...prev, sale_price: e.target.value }))}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">سعر التكلفة</label>
+                <input
+                  className="form-input"
+                  type="number"
+                  min="0"
+                  value={productForm.cost_price}
+                  onChange={(e) => setProductForm((prev) => ({ ...prev, cost_price: e.target.value }))}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">الوحدة</label>
+                <input
+                  className="form-input"
+                  value={productForm.unit}
+                  onChange={(e) => setProductForm((prev) => ({ ...prev, unit: e.target.value }))}
+                  placeholder="قطعة / علبة ..."
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">حد تنبيه المخزون</label>
+                <input
+                  className="form-input"
+                  type="number"
+                  min="0"
+                  value={productForm.min_stock_alert}
+                  onChange={(e) => setProductForm((prev) => ({ ...prev, min_stock_alert: e.target.value }))}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">أقصى خصم مسموح</label>
+                <input
+                  className="form-input"
+                  type="number"
+                  min="0"
+                  value={productForm.max_discount}
+                  onChange={(e) => setProductForm((prev) => ({ ...prev, max_discount: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {productError && <div className="error-text mt-4">{productError}</div>}
+
+            <div className="form-actions mt-4">
+              <button type="submit" className="btn btn-primary">{editingId ? 'تحديث المنتج' : 'حفظ المنتج'}</button>
               {editingId && (
-                <button type="button" className="secondary" onClick={resetProductForm}>
+                <button type="button" className="btn btn-ghost" onClick={resetProductForm}>
                   إلغاء التعديل
                 </button>
               )}
             </div>
           </form>
         </div>
+      </div>
 
-        <div className="card">
+      <div className="grid grid-cols-1 md-grid-cols-2 lg-grid-cols-4 lg-gap-8 gap-4 mt-6">
+        {/* Products Table */}
+        <div className="card lg-col-span-3">
           <div className="card-header">
-            <h2>قائمة المنتجات</h2>
+            <h2 className="card-title">قائمة المنتجات</h2>
             {loading && <span className="muted">جارِ التحميل...</span>}
           </div>
-          <div className="table-responsive">
-            <table className="data-table">
+          <div className="table-container">
+            <table className="table">
               <thead>
                 <tr>
                   <th>الاسم</th>
@@ -483,7 +502,7 @@ export default function ProductsPage() {
               <tbody>
                 {products.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="muted">
+                    <td colSpan={7} className="text-center muted">
                       لا توجد منتجات مطابقة
                     </td>
                   </tr>
@@ -500,13 +519,15 @@ export default function ProductsPage() {
                         {product.is_active ? 'نشط' : 'معطل'}
                       </span>
                     </td>
-                    <td className="actions-cell">
-                      <button type="button" onClick={() => startEdit(product)}>
-                        تعديل
-                      </button>
-                      <button type="button" className="secondary" onClick={() => handleToggleProduct(product)}>
-                        {product.is_active ? 'تعطيل' : 'تفعيل'}
-                      </button>
+                    <td>
+                      <div className="d-flex gap-2">
+                        <button type="button" className="btn btn-primary btn-sm" style={{ padding: '0.25rem 0.5rem', minHeight: '32px' }} onClick={() => startEdit(product)}>
+                          تعديل
+                        </button>
+                        <button type="button" className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', minHeight: '32px' }} onClick={() => handleToggleProduct(product)}>
+                          {product.is_active ? 'تعطيل' : 'تفعيل'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -515,19 +536,19 @@ export default function ProductsPage() {
           </div>
         </div>
 
+        {/* Categories */}
         <div className="card">
           <div className="card-header">
-            <h2>إدارة الفئات</h2>
+            <h2 className="card-title">إدارة الفئات</h2>
           </div>
-          <form className="form-grid" onSubmit={handleCreateCategory}>
-            <label className="form-field">
-              <span>اسم الفئة</span>
-              <input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} />
-            </label>
-            <div className="form-actions">
-              <button type="submit">إضافة فئة</button>
+          <form className="d-flex flex-col gap-4" onSubmit={handleCreateCategory}>
+            <div className="form-group">
+              <label className="form-label">اسم الفئة</label>
+              <input className="form-input" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} />
             </div>
-            <label className="form-field checkbox-field">
+            <button type="submit" className="btn btn-primary w-full">إضافة فئة</button>
+
+            <label className="checkbox-field d-flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={showInactiveCategories}
@@ -538,23 +559,23 @@ export default function ProductsPage() {
             {categoryError && <div className="error-text">{categoryError}</div>}
           </form>
 
-          <div className="category-list">
+          <div className="category-list mt-4 flex flex-col gap-2">
             {categories
               .filter((c) => (showInactiveCategories ? true : c.is_active))
               .map((cat) => {
                 const id = cat.id ?? (cat as any).category_id
                 return (
-                  <div key={id} className="category-row">
+                  <div key={id} className="category-row d-flex justify-between items-center p-2 border rounded-md" style={{ borderColor: 'var(--color-border)' }}>
                     <div>
-                      <div className="category-name">{cat.name}</div>
-                      {!cat.is_active && <div className="muted">معطلة</div>}
+                      <div className="font-bold">{cat.name}</div>
+                      {!cat.is_active && <div className="muted text-sm">معطلة</div>}
                     </div>
-                    <div className="category-actions">
-                      <button type="button" onClick={() => handleRenameCategory(Number(id), cat.name)}>
-                        إعادة تسمية
+                    <div className="category-actions d-flex gap-1">
+                      <button type="button" className="btn btn-ghost btn-sm" style={{ padding: '0.25rem', minHeight: 'auto' }} onClick={() => handleRenameCategory(Number(id), cat.name)}>
+                        تعديل
                       </button>
                       {cat.is_active && (
-                        <button type="button" className="secondary" onClick={() => handleDisableCategory(Number(id))}>
+                        <button type="button" className="btn btn-ghost btn-sm text-error" style={{ padding: '0.25rem', minHeight: 'auto', color: 'var(--color-error-text)' }} onClick={() => handleDisableCategory(Number(id))}>
                           تعطيل
                         </button>
                       )}

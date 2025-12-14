@@ -27,11 +27,11 @@ const currencyFormatter = new Intl.NumberFormat('ar-EG', {
 })
 
 const successBoxStyle = {
-  background: '#ecfdf3',
+  background: 'var(--color-success-bg)',
   padding: '0.75rem 1rem',
-  borderRadius: 10,
-  color: '#166534',
-  border: '1px solid #bbf7d0',
+  borderRadius: 'var(--radius-md)',
+  color: 'var(--color-success-text)',
+  border: '1px solid var(--color-border)',
 }
 
 export default function PosPage() {
@@ -208,194 +208,219 @@ export default function PosPage() {
     <section>
       <header className="page-header">
         <div>
-          <h1>نقطة البيع</h1>
+          <h1 className="page-title">نقطة البيع</h1>
           <p className="muted">إدارة المبيعات اليومية وإضافة المنتجات للسلة</p>
         </div>
       </header>
 
-      <div className="grid-layout">
-        <div className="card">
-          <div className="card-header">
-            <h2>بحث عن المنتجات</h2>
-            {searchLoading && <span className="muted">...جاري التحميل</span>}
-          </div>
-
-          {error && <div className="error-text" role="alert">{error}</div>}
-          {successMessage && (
-            <div className="success-text" style={successBoxStyle}>
-              {successMessage}
+      <div className="grid grid-cols-1 lg-grid-cols-2 lg-gap-6 gap-4">
+        {/* Product Search Panel (First in DOM = Right in RTL) */}
+        <div className="d-flex flex-col gap-4">
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">بحث عن المنتجات</h2>
+              {searchLoading && <span className="muted text-sm">...جاري التحميل</span>}
             </div>
-          )}
 
-          <div className="filters-grid" style={{ marginTop: '0.75rem' }}>
-            <div className="form-group">
-              <label htmlFor="nameSearch">بحث بالاسم</label>
-              <input
-                id="nameSearch"
-                type="text"
-                value={nameQuery}
-                onChange={(e) => {
-                  const value = e.target.value
-                  setNameQuery(value)
-                  if (!value.trim()) {
-                    void loadDefaultProducts()
-                  }
-                }}
-                placeholder="اكتب اسم المنتج"
-              />
+            {error && <div className="error-text mb-4" role="alert">{error}</div>}
+            {successMessage && (
+              <div className="mb-4" style={successBoxStyle}>
+                {successMessage}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md-grid-cols-2 gap-4 mb-4">
+              <div className="form-group">
+                <label className="form-label" htmlFor="nameSearch">بحث بالاسم</label>
+                <input
+                  id="nameSearch"
+                  className="form-input"
+                  type="text"
+                  value={nameQuery}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setNameQuery(value)
+                    if (!value.trim()) {
+                      void loadDefaultProducts()
+                    }
+                  }}
+                  placeholder="اكتب اسم المنتج"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="barcodeSearch">بحث بالباركود</label>
+                <input
+                  id="barcodeSearch"
+                  className="form-input"
+                  type="text"
+                  value={barcodeQuery}
+                  onChange={(e) => setBarcodeQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      void handleBarcodeSearch()
+                    }
+                  }}
+                  placeholder="امسح أو اكتب الباركود"
+                />
+              </div>
             </div>
-            <div className="form-group">
-              <label htmlFor="barcodeSearch">بحث بالباركود</label>
-              <input
-                id="barcodeSearch"
-                type="text"
-                value={barcodeQuery}
-                onChange={(e) => setBarcodeQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    void handleBarcodeSearch()
-                  }
-                }}
-                placeholder="امسح أو اكتب الباركود"
-              />
-            </div>
-          </div>
 
-          <div className="table-responsive" style={{ marginTop: '1rem' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>اسم المنتج</th>
-                  <th>الفئة</th>
-                  <th>سعر البيع</th>
-                  <th>إضافة</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="muted">
-                      لا توجد منتجات مطابقة
-                    </td>
-                  </tr>
-                ) : (
-                  products.map((product) => {
-                    const id = product.id ?? (product as any).product_id
-                    const categoryName = (product as any).category_name || ''
-                    return (
-                      <tr key={id}>
-                        <td>{product.name}</td>
-                        <td>{categoryName || '—'}</td>
-                        <td>{currencyFormatter.format(Number(product.sale_price) || 0)}</td>
-                        <td>
-                          <button type="button" onClick={() => addProductToCart(product)}>
-                            إضافة إلى السلة
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="card-header">
-            <h2>سلة المشتريات</h2>
-            <button type="button" className="secondary" onClick={clearCart} disabled={!cartLines.length}>
-              إلغاء السلة
-            </button>
-          </div>
-
-          {cartLines.length === 0 ? (
-            <p className="muted">السلة فارغة، ابدأ بإضافة المنتجات من القائمة.</p>
-          ) : (
-            <div className="table-responsive">
-              <table className="data-table">
+            <div className="table-container" style={{ maxHeight: '600px', overflowY: 'auto' }}>
+              <table className="table">
                 <thead>
                   <tr>
-                    <th>الاسم</th>
-                    <th>الكمية</th>
-                    <th>سعر الوحدة</th>
-                    <th>الخصم</th>
-                    <th>إجمالي السطر</th>
-                    <th>إجراءات</th>
+                    <th>اسم المنتج</th>
+                    <th>الفئة</th>
+                    <th>سعر البيع</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {cartLines.map((line) => (
-                    <tr key={line.productId}>
-                      <td>{line.name}</td>
-                      <td>
-                        <input
-                          type="number"
-                          min={1}
-                          value={line.quantity}
-                          onChange={(e) => updateLineQuantity(line.productId, Number(e.target.value))}
-                          style={{ width: '90px' }}
-                        />
-                      </td>
-                      <td>{currencyFormatter.format(line.unitPrice)}</td>
-                      <td>
-                        <input
-                          type="number"
-                          min={0}
-                          value={line.discountAmount}
-                          onChange={(e) => updateLineDiscount(line.productId, Number(e.target.value))}
-                          style={{ width: '110px' }}
-                        />
-                      </td>
-                      <td>{currencyFormatter.format(Math.max(0, line.quantity * line.unitPrice - line.discountAmount))}</td>
-                      <td className="actions-cell">
-                        <button type="button" onClick={() => updateLineQuantity(line.productId, line.quantity + 1)}>
-                          +
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => updateLineQuantity(line.productId, Math.max(1, line.quantity - 1))}
-                          className="secondary"
-                        >
-                          -
-                        </button>
-                        <button type="button" className="secondary" onClick={() => removeLine(line.productId)}>
-                          حذف
-                        </button>
+                  {products.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="text-center muted p-4">
+                        لا توجد منتجات مطابقة
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    products.map((product) => {
+                      const id = product.id ?? (product as any).product_id
+                      const categoryName = (product as any).category_name || ''
+                      return (
+                        <tr key={id}>
+                          <td>
+                            <div className="font-bold">{product.name}</div>
+                            {product.barcode && <div className="text-xs muted">{product.barcode}</div>}
+                          </td>
+                          <td>{categoryName || '—'}</td>
+                          <td className="font-bold text-primary">{currencyFormatter.format(Number(product.sale_price) || 0)}</td>
+                          <td>
+                            <button type="button" className="btn btn-primary btn-sm" onClick={() => addProductToCart(product)}>
+                              إضافة
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
-          )}
+          </div>
+        </div>
 
-          <dl style={{ marginTop: '1rem', display: 'grid', gap: '0.5rem' }}>
-            <div className="field-row">
-              <dt>المجموع الفرعي</dt>
-              <dd>{currencyFormatter.format(totals.subtotal)}</dd>
-            </div>
-            <div className="field-row">
-              <dt>إجمالي الخصم</dt>
-              <dd>{currencyFormatter.format(totals.totalDiscount)}</dd>
-            </div>
-            <div className="field-row">
-              <dt>الإجمالي النهائي</dt>
-              <dd>{currencyFormatter.format(totals.grandTotal)}</dd>
-            </div>
-          </dl>
-
-          <div className="form-actions" style={{ marginTop: '1rem', justifyContent: 'flex-start' }}>
-            <button type="button" onClick={handleCompleteSale} disabled={!cartLines.length}>
-              إتمام البيع
-            </button>
-            <button type="button" className="secondary" onClick={clearCart} disabled={!cartLines.length}>
+        {/* Cart Column (Second in DOM = Left in RTL) */}
+        <div className="card h-full" style={{ position: 'sticky', top: '90px', maxHeight: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
+          <div className="card-header">
+            <h2 className="card-title">سلة المشتريات</h2>
+            <button type="button" className="btn btn-ghost btn-sm text-error" onClick={clearCart} disabled={!cartLines.length}>
               إلغاء السلة
             </button>
           </div>
+
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {cartLines.length === 0 ? (
+              <div className="d-flex items-center justify-center h-full p-8 text-center muted flex-col">
+                <div style={{ fontSize: '3rem', opacity: 0.2 }}>🛒</div>
+                <p>السلة فارغة، ابدأ بإضافة المنتجات من القائمة.</p>
+              </div>
+            ) : (
+              <div className="table-container">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>الاسم</th>
+                      <th>الكمية</th>
+                      <th>السعر</th>
+                      <th>الإجمالي</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cartLines.map((line) => (
+                      <tr key={line.productId}>
+                        <td>
+                          <div className="font-bold">{line.name}</div>
+                          <div className="muted text-sm">{currencyFormatter.format(line.unitPrice)}</div>
+                        </td>
+                        <td>
+                          <div className="d-flex items-center gap-1">
+                            <button className="btn btn-secondary btn-sm p-1" style={{ minWidth: '24px', height: '24px' }} onClick={() => updateLineQuantity(line.productId, Math.max(1, line.quantity - 1))}>-</button>
+                            <input
+                              type="number"
+                              min={1}
+                              value={line.quantity}
+                              onChange={(e) => updateLineQuantity(line.productId, Number(e.target.value))}
+                              className="form-input p-1 text-center"
+                              style={{ width: '40px', minHeight: '28px' }}
+                            />
+                            <button className="btn btn-secondary btn-sm p-1" style={{ minWidth: '24px', height: '24px' }} onClick={() => updateLineQuantity(line.productId, line.quantity + 1)}>+</button>
+                          </div>
+                        </td>
+                        <td>
+                          <input
+                             type="number"
+                             min={0}
+                             value={line.discountAmount}
+                             onChange={(e) => updateLineDiscount(line.productId, Number(e.target.value))}
+                             className="form-input p-1"
+                             placeholder="خصم"
+                             style={{ width: '60px', minHeight: '28px' }}
+                          />
+                        </td>
+                        <td>{currencyFormatter.format(Math.max(0, line.quantity * line.unitPrice - line.discountAmount))}</td>
+                        <td>
+                          <button type="button" className="btn btn-ghost btn-sm text-error p-1" onClick={() => removeLine(line.productId)}>
+                            ✕
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-gray-200 mt-4 pt-4">
+             <div className="d-flex justify-between mb-2">
+               <span className="muted">المجموع الفرعي</span>
+               <span className="font-bold">{currencyFormatter.format(totals.subtotal)}</span>
+             </div>
+             <div className="d-flex justify-between mb-2">
+               <span className="muted">إجمالي الخصم</span>
+               <span className="text-error">{currencyFormatter.format(totals.totalDiscount)}</span>
+             </div>
+             <div className="d-flex justify-between mb-4 text-xl font-bold text-primary">
+               <span>الإجمالي النهائي</span>
+               <span>{currencyFormatter.format(totals.grandTotal)}</span>
+             </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button type="button" className="btn btn-primary w-full" onClick={handleCompleteSale} disabled={!cartLines.length}>
+                إتمام البيع
+              </button>
+              <button type="button" className="btn btn-secondary w-full" onClick={clearCart} disabled={!cartLines.length}>
+                إلغاء
+              </button>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Mobile Sticky Footer for Actions */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 lg-hidden shadow-top z-50 d-flex justify-between items-center gap-4">
+          <div className="flex flex-col">
+              <span className="text-xs muted">الإجمالي</span>
+              <span className="font-bold text-lg">{currencyFormatter.format(totals.grandTotal)}</span>
+          </div>
+          <button type="button" className="btn btn-primary flex-1" onClick={handleCompleteSale} disabled={!cartLines.length}>
+            إتمام البيع ({cartLines.length})
+          </button>
+      </div>
+      {/* Spacer for mobile footer */}
+      <div className="h-24 lg:hidden"></div>
     </section>
   )
 }

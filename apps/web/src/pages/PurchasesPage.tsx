@@ -220,21 +220,23 @@ export default function PurchasesPage() {
     <section>
       <header className="page-header">
         <div>
-          <h1>المشتريات</h1>
+          <h1 className="page-title">المشتريات</h1>
           <p className="muted">تسجيل فواتير الشراء وزيادة المخزون.</p>
         </div>
       </header>
 
-      <div className="grid-layout">
-        <div className="card">
+      <div className="grid grid-cols-1 lg-grid-cols-3 lg-gap-8 gap-4">
+        {/* Invoice Info - Left Column (1/3) */}
+        <div className="card h-fit">
           <div className="card-header">
-            <h2>بيانات الفاتورة</h2>
+            <h2 className="card-title">بيانات الفاتورة</h2>
           </div>
-          <div className="form-grid">
+          <div className="d-flex flex-col gap-4">
             <div className="form-group">
-              <label htmlFor="supplierName">المورد</label>
+              <label className="form-label" htmlFor="supplierName">المورد</label>
               <input
                 id="supplierName"
+                className="form-input"
                 type="text"
                 value={supplierName}
                 onChange={(e) => setSupplierName(e.target.value)}
@@ -242,9 +244,10 @@ export default function PurchasesPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="supplierInvoiceRef">رقم فاتورة المورد</label>
+              <label className="form-label" htmlFor="supplierInvoiceRef">رقم فاتورة المورد</label>
               <input
                 id="supplierInvoiceRef"
+                className="form-input"
                 type="text"
                 value={supplierInvoiceRef}
                 onChange={(e) => setSupplierInvoiceRef(e.target.value)}
@@ -252,142 +255,152 @@ export default function PurchasesPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="invoiceDate">تاريخ الفاتورة</label>
+              <label className="form-label" htmlFor="invoiceDate">تاريخ الفاتورة</label>
               <input
                 id="invoiceDate"
+                className="form-input"
                 type="date"
                 value={invoiceDate}
                 onChange={(e) => setInvoiceDate(e.target.value)}
               />
             </div>
-            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <label htmlFor="notes">ملاحظات</label>
+            <div className="form-group">
+              <label className="form-label" htmlFor="notes">ملاحظات</label>
               <textarea
                 id="notes"
+                className="form-input"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="ملاحظات إضافية"
-                rows={2}
+                rows={3}
               />
             </div>
           </div>
         </div>
 
-        <div className="card">
+        {/* Invoice Items - Right Column (2/3) */}
+        <div className="card lg-col-span-2">
           <div className="card-header">
-            <h2>عناصر الفاتورة</h2>
+            <h2 className="card-title">عناصر الفاتورة</h2>
             {searchLoading && <span className="muted">...جاري التحميل</span>}
           </div>
 
           {saveError && (
-            <div className="error-text" role="alert">
+            <div className="error-text mb-4" role="alert">
               {saveError}
             </div>
           )}
           {searchError && (
-            <div className="error-text" role="alert">
+            <div className="error-text mb-4" role="alert">
               {searchError}
             </div>
           )}
-          {successMessage && <div className="success-text">{successMessage}</div>}
+          {successMessage && <div className="badge badge-success mb-4 p-3 w-full block text-base">{successMessage}</div>}
 
-          <div className="form-grid" style={{ marginBottom: '1rem' }}>
-            <div className="form-group">
-              <label htmlFor="productSearch">بحث بالاسم</label>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {/* Product Search & Add */}
+          <div className="border border-gray-200 rounded-lg p-4 mb-6 bg-gray-50">
+            <div className="grid grid-cols-1 md-grid-cols-2 gap-4 mb-4">
+              <div className="form-group">
+                <label className="form-label" htmlFor="productSearch">بحث بالاسم</label>
+                <div className="d-flex gap-2">
+                  <input
+                    id="productSearch"
+                    className="form-input flex-1"
+                    type="text"
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    placeholder="اسم المنتج"
+                  />
+                  <button type="button" onClick={handleSearch} className="btn btn-secondary">
+                    بحث
+                  </button>
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="barcodeSearch">بحث بالباركود</label>
                 <input
-                  id="productSearch"
+                  id="barcodeSearch"
+                  className="form-input"
                   type="text"
-                  value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
-                  placeholder="اسم المنتج"
+                  value={barcodeSearch}
+                  onChange={(e) => setBarcodeSearch(e.target.value)}
+                  onKeyDown={handleBarcodeSearch}
+                  placeholder="أدخل الباركود واضغط إنتر"
                 />
-                <button type="button" onClick={handleSearch} className="secondary">
-                  بحث
+              </div>
+            </div>
+
+            {/* Search Results */}
+            {searchResults.length > 0 && (
+               <div className="table-container mb-4 bg-white" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>المنتج</th>
+                      <th>الباركود</th>
+                      <th>السعر</th>
+                      <th>إجراء</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {searchResults.map((product) => (
+                      <tr key={product.id ?? (product as any).product_id}>
+                        <td>{product.name}</td>
+                        <td>{product.barcode || '—'}</td>
+                        <td>{product.cost_price ?? product.sale_price ?? 0}</td>
+                        <td>
+                          <button type="button" className="btn btn-primary btn-sm py-1" onClick={() => handleSelectProduct(product)}>
+                            اختيار
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Selected Product Form */}
+            <div className="d-flex flex-col md-flex-row gap-4 items-end">
+              <div className="form-group flex-1 w-full">
+                <label className="form-label">المنتج المحدد</label>
+                <div className="form-input bg-gray-100 text-gray-700">
+                  {selectedProduct ? selectedProduct.name : 'لم يتم اختيار منتج بعد'}
+                </div>
+              </div>
+              <div className="form-group w-full md-w-auto" style={{ width: '120px' }}>
+                <label className="form-label" htmlFor="lineQty">الكمية</label>
+                <input
+                  id="lineQty"
+                  className="form-input"
+                  type="number"
+                  min={1}
+                  value={lineQty}
+                  onChange={(e) => setLineQty(e.target.value)}
+                />
+              </div>
+              <div className="form-group w-full md-w-auto" style={{ width: '160px' }}>
+                <label className="form-label" htmlFor="lineCost">سعر الشراء للوحدة</label>
+                <input
+                  id="lineCost"
+                  className="form-input"
+                  type="number"
+                  min={0}
+                  value={lineCost}
+                  onChange={(e) => setLineCost(e.target.value)}
+                />
+              </div>
+              <div className="form-group w-full md-w-auto">
+                <button type="button" className="btn btn-primary w-full whitespace-nowrap" onClick={handleAddLine} disabled={!selectedProduct}>
+                  إضافة للقائمة
                 </button>
               </div>
             </div>
-            <div className="form-group">
-              <label htmlFor="barcodeSearch">بحث بالباركود</label>
-              <input
-                id="barcodeSearch"
-                type="text"
-                value={barcodeSearch}
-                onChange={(e) => setBarcodeSearch(e.target.value)}
-                onKeyDown={handleBarcodeSearch}
-                placeholder="أدخل الباركود واضغط إنتر"
-              />
-            </div>
           </div>
 
-          <div className="data-table" style={{ marginBottom: '1rem' }}>
-            <table>
-              <thead>
-                <tr>
-                  <th>المنتج</th>
-                  <th>الباركود</th>
-                  <th>السعر</th>
-                  <th>إجراء</th>
-                </tr>
-              </thead>
-              <tbody>
-                {searchResults.map((product) => (
-                  <tr key={product.id ?? (product as any).product_id}>
-                    <td>{product.name}</td>
-                    <td>{product.barcode || '—'}</td>
-                    <td>{product.cost_price ?? product.sale_price ?? 0}</td>
-                    <td>
-                      <button type="button" onClick={() => handleSelectProduct(product)}>
-                        اختيار
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {!searchResults.length && (
-                  <tr>
-                    <td colSpan={4} style={{ textAlign: 'center' }}>
-                      لا توجد نتائج بحث حالياً
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="form-grid" style={{ marginBottom: '1rem' }}>
-            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <label>المنتج المحدد</label>
-              <div className="muted">{selectedProduct ? selectedProduct.name : 'لم يتم اختيار منتج بعد'}</div>
-            </div>
-            <div className="form-group">
-              <label htmlFor="lineQty">الكمية</label>
-              <input
-                id="lineQty"
-                type="number"
-                min={1}
-                value={lineQty}
-                onChange={(e) => setLineQty(e.target.value)}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="lineCost">سعر الشراء للوحدة</label>
-              <input
-                id="lineCost"
-                type="number"
-                min={0}
-                value={lineCost}
-                onChange={(e) => setLineCost(e.target.value)}
-              />
-            </div>
-            <div className="form-group" style={{ alignSelf: 'flex-end' }}>
-              <button type="button" onClick={handleAddLine}>
-                إضافة إلى قائمة الشراء
-              </button>
-            </div>
-          </div>
-
-          <div className="data-table" style={{ marginBottom: '1rem' }}>
-            <table>
+          {/* Added Lines Table */}
+          <div className="table-container mb-4">
+            <table className="table">
               <thead>
                 <tr>
                   <th>المنتج</th>
@@ -401,8 +414,8 @@ export default function PurchasesPage() {
                 {lines.map((line) => (
                   <tr key={line.productId}>
                     <td>
-                      <div>{line.name}</div>
-                      <div className="muted" style={{ fontSize: '0.875rem' }}>
+                      <div className="font-bold">{line.name}</div>
+                      <div className="muted text-xs">
                         {line.barcode || '—'}
                       </div>
                     </td>
@@ -412,7 +425,8 @@ export default function PurchasesPage() {
                         min={1}
                         value={line.qty}
                         onChange={(e) => handleLineChange(line.productId, 'qty', e.target.value)}
-                        style={{ width: '90px' }}
+                        className="form-input p-1"
+                        style={{ width: '80px' }}
                       />
                     </td>
                     <td>
@@ -421,12 +435,13 @@ export default function PurchasesPage() {
                         min={0}
                         value={line.unitCost}
                         onChange={(e) => handleLineChange(line.productId, 'unitCost', e.target.value)}
-                        style={{ width: '110px' }}
+                        className="form-input p-1"
+                        style={{ width: '100px' }}
                       />
                     </td>
                     <td>{calculateLineTotal(line).toFixed(2)}</td>
                     <td>
-                      <button type="button" className="secondary" onClick={() => handleDeleteLine(line.productId)}>
+                      <button type="button" className="btn btn-ghost btn-sm text-error p-1" onClick={() => handleDeleteLine(line.productId)}>
                         حذف
                       </button>
                     </td>
@@ -434,7 +449,7 @@ export default function PurchasesPage() {
                 ))}
                 {!lines.length && (
                   <tr>
-                    <td colSpan={5} style={{ textAlign: 'center' }}>
+                    <td colSpan={5} className="text-center p-6 muted">
                       لم تتم إضافة أي عناصر بعد
                     </td>
                   </tr>
@@ -443,20 +458,19 @@ export default function PurchasesPage() {
             </table>
           </div>
 
-          <div className="form-grid" style={{ alignItems: 'center' }}>
-            <div className="form-group">
-              <label>إجمالي عدد الأصناف في الفاتورة</label>
-              <div>{lines.length}</div>
-            </div>
-            <div className="form-group">
-              <label>إجمالي قيمة الفاتورة</label>
-              <div>{totalCost.toFixed(2)}</div>
-            </div>
-            <div className="form-group" style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>
-              <button type="button" onClick={handleSavePurchase}>
+          {/* Totals & Actions */}
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+             <div className="d-flex flex-col md-flex-row justify-between items-center gap-4 mb-4">
+               <div className="text-sm">
+                 إجمالي عدد الأصناف: <span className="font-bold">{lines.length}</span>
+               </div>
+               <div className="text-xl font-bold text-primary">
+                 إجمالي الفاتورة: {totalCost.toFixed(2)}
+               </div>
+             </div>
+             <button type="button" className="btn btn-primary w-full md-w-auto px-8" onClick={handleSavePurchase}>
                 حفظ عملية الشراء
-              </button>
-            </div>
+             </button>
           </div>
         </div>
       </div>
