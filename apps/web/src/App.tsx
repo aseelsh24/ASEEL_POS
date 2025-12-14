@@ -10,6 +10,7 @@ const navItems = [
   { path: '/products', label: 'الأصناف' },
   { path: '/purchases', label: 'المشتريات' },
   { path: '/returns', label: 'المرتجعات' },
+  { path: '/ledger', label: 'سجل الحركات' },
   { path: '/reports', label: 'التقارير' },
   { path: '/settings', label: 'الإعدادات' },
 ]

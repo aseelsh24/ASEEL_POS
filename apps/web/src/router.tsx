@@ -5,6 +5,7 @@ import ProductsPage from './pages/ProductsPage'
 import PurchasesPage from './pages/PurchasesPage'
 import ReturnsPage from './pages/ReturnsPage'
 import ReportsPage from './pages/ReportsPage'
+import LedgerPage from './pages/LedgerPage'
 import SettingsPage from './pages/SettingsPage'
 import FirstRunWizardPage from './pages/FirstRunWizardPage'
 import LoginPage from './pages/LoginPage'
@@ -50,6 +51,7 @@ export function AppRouter() {
       <Route path="/products" element={guard(<ProductsPage />)} />
       <Route path="/purchases" element={guard(<PurchasesPage />)} />
       <Route path="/returns" element={guard(<ReturnsPage />)} />
+      <Route path="/ledger" element={guard(<LedgerPage />)} />
       <Route path="/reports" element={guard(<ReportsPage />)} />
       <Route path="/settings" element={guard(<SettingsPage />)} />
     </Routes>
