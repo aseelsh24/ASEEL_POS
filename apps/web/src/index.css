@@ -1,39 +1,34 @@
+@import './styles/theme.css';
+
 :root {
-  font-family: 'Noto Sans Arabic', 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color: #0f172a;
-  background-color: #f7f7f7;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-a:hover {
-  text-decoration: none;
+  /* Retain specific font if not fully covered, but theme.css handles the main variables */
 }
 
 body {
   margin: 0;
   min-height: 100vh;
   direction: rtl;
-  background-color: #f7f7f7;
 }
 
 #root {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-button,
-a,
-input,
-textarea {
-  min-height: 48px;
+/* Ensure consistent box-sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+a {
+  text-decoration: none;
+  color: var(--color-primary);
+  transition: var(--transition-base);
+}
+
+a:hover {
+  color: var(--color-primary-hover);
 }
 
 button {
