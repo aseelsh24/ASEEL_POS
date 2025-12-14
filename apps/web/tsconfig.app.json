@@ -30,5 +30,6 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "../../backend/**/*.ts", "../../packages/core/src/**/*.ts", "../../packages/db/src/**/*.ts"]
+  "include": ["src", "../../backend/**/*.ts", "../../packages/core/src/**/*.ts", "../../packages/db/src/**/*.ts"],
+  "exclude": ["**/*.test.ts"]
 }

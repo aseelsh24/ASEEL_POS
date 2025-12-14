@@ -9,7 +9,8 @@ function mapProductError(err: unknown): string {
   if (code === DUPLICATE_BARCODE_CODE) {
     return 'الباركود مستخدم بالفعل لمنتج آخر'
   }
-  return 'تعذر حفظ المنتج. يرجى المحاولة مجدداً'
+  const message = (err as any)?.message ?? String(err)
+  return `تعذر حفظ المنتج: ${message}`
 }
 
 export async function fetchProducts(filters?: ProductFilters): Promise<Product[]> {
