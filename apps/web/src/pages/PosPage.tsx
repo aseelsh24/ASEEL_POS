@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Product } from '@core/index'
 import { fetchProducts } from '../api/productsApi'
 import { createSale } from '../api/posApi'
+import { resolveProductIdentity } from '../utils/productUtils'
 
 type CartLine = {
   productId: number
@@ -107,25 +108,10 @@ export default function PosPage() {
     }
   }
 
-  function resolveProductIdentity(product: Product) {
-    const rawId = (product as any).product_id ?? (product as any).productId ?? product.id
-    const id = rawId != null ? Number(rawId) : NaN
-    if (!Number.isFinite(id) || id <= 0) {
-      return null
-    }
-
-    return {
-      productId: id,
-      name: product.name ?? 'منتج',
-      barcode: product.barcode ?? undefined,
-      unitPrice: Number(product.sale_price) || 0,
-    }
-  }
-
   function addProductToCart(product: Product) {
     const baseInfo = resolveProductIdentity(product)
     if (!baseInfo) {
-      setError('تعذر تحديد المنتج لإضافته إلى السلة')
+      setError('تعذر تحديد المنتج لإضافته إلى السلة (المعرف مفقود أو غير صالح)')
       return
     }
 
