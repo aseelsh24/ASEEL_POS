@@ -154,7 +154,9 @@ export async function importProductsFromCsv(rows: ParsedCsvRow[]): Promise<Impor
     try {
       const barcode = values.barcode?.trim() || undefined
       const categoryId = await ensureCategoryId(values.category_name, categoriesByName)
-      const payload = {
+
+      // Sanitize payload: never pass ID to creation to avoid ConstraintError
+      const payload: any = {
         name,
         barcode,
         categoryId,
@@ -165,6 +167,10 @@ export async function importProductsFromCsv(rows: ParsedCsvRow[]): Promise<Impor
         max_discount: parseNumber(values.max_discount),
         is_active: parseBoolean(values.is_active),
       }
+      // Explicitly remove any ID fields if they somehow got in (though they shouldn't with above construction)
+      delete payload.id
+      delete payload.product_id
+      delete payload.productId
 
       if (barcode) {
         const existing = await findProductByBarcode(barcode)
