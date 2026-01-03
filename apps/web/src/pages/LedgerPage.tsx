@@ -71,7 +71,7 @@ export default function LedgerPage() {
     const refId = m.reference_id ?? '?'
     switch (m.reference_type) {
       case 'INVOICE':
-        return `فاتورة #${refId}` // Ideally we would show invoice_number, but we only have ID here for now
+        return `فاتورة #${refId}`
       case 'PURCHASE':
         return `شراء #${refId}`
       case 'SALES_RETURN':
@@ -84,23 +84,25 @@ export default function LedgerPage() {
   }
 
   return (
-    <section className="page">
-      <div className="page-header">
+    <section>
+      <header className="page-header">
         <div>
-          <h1>سجل حركات الصنف</h1>
+          <h1 className="page-title">سجل حركات الصنف</h1>
           <p className="muted">تتبع تاريخ حركة المخزون لكل منتج.</p>
         </div>
-      </div>
+      </header>
 
-      <div className="grid-layout">
-        <div className="card">
+      <div className="grid grid-cols-1 lg-grid-cols-12 gap-6">
+        {/* Filters Panel (Compact) - 3 Columns on Desktop */}
+        <div className="card lg-col-span-4 h-fit">
           <div className="card-header">
-            <h2>خيارات البحث</h2>
+            <h2 className="card-title">خيارات البحث</h2>
           </div>
-          <div className="filters-grid">
-            <label className="form-field">
-              <span>اختر الصنف</span>
+          <div className="flex flex-col gap-4">
+            <div className="form-group">
+              <label className="form-label">اختر الصنف</label>
               <select
+                className="form-select"
                 value={selectedProductId}
                 onChange={(e) => setSelectedProductId(Number(e.target.value) || '')}
               >
@@ -111,11 +113,12 @@ export default function LedgerPage() {
                   </option>
                 ))}
               </select>
-            </label>
+            </div>
 
-            <label className="form-field">
-              <span>نوع الحركة</span>
+            <div className="form-group">
+              <label className="form-label">نوع الحركة</label>
               <select
+                className="form-select"
                 value={movementType}
                 onChange={(e) => setMovementType(e.target.value as MovementType | '')}
               >
@@ -125,27 +128,35 @@ export default function LedgerPage() {
                 <option value="SALES_RETURN">مرتجع مبيعات</option>
                 <option value="ADJUSTMENT">تسوية مخزنية</option>
               </select>
-            </label>
+            </div>
 
-            <label className="form-field">
-              <span>من تاريخ</span>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="form-group">
+                <label className="form-label">من تاريخ</label>
+                <input className="form-input" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              </div>
 
-            <label className="form-field">
-              <span>إلى تاريخ</span>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-            </label>
+              <div className="form-group">
+                <label className="form-label">إلى تاريخ</label>
+                <input className="form-input" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              </div>
+            </div>
+
+            {/* Show current stock for quick reference if selected */}
+            {selectedProduct && (
+              <div className="bg-white border border-gray-200 p-4 rounded-lg mt-2">
+                <div className="text-sm muted mb-1">الرصيد الحالي</div>
+                <div className="text-2xl font-bold text-primary">{selectedProduct.stock_qty} <span className="text-sm font-normal text-muted">{selectedProduct.unit}</span></div>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="card">
+        {/* Results Panel (Wider) - 9 Columns on Desktop */}
+        <div className="card lg-col-span-8 min-h-400">
           <div className="card-header">
             <div>
-              <h2>سجل الحركات: {selectedProduct?.name ?? '...'}</h2>
-              {selectedProduct && (
-                <p className="muted">الرصيد الحالي: {selectedProduct.stock_qty}</p>
-              )}
+              <h2 className="card-title">سجل الحركات: {selectedProduct?.name ?? '...'}</h2>
             </div>
             {loading && <span className="muted">جارٍ التحميل...</span>}
           </div>
@@ -153,16 +164,22 @@ export default function LedgerPage() {
           {error && <div className="error-text">{error}</div>}
 
           {!loading && !error && !selectedProductId && (
-            <div className="muted p-4">يرجى اختيار صنف لعرض سجل حركاته.</div>
+            <div className="d-flex flex-col items-center justify-center h-full text-center muted" style={{ minHeight: '300px' }}>
+               <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }}>📋</div>
+               <p>يرجى اختيار صنف من القائمة الجانبية لعرض سجل حركاته.</p>
+            </div>
           )}
 
           {!loading && !error && selectedProductId && movements.length === 0 && (
-            <div className="muted p-4">لا توجد حركات في الفترة المحددة.</div>
+            <div className="d-flex flex-col items-center justify-center h-full text-center muted" style={{ minHeight: '300px' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }}>📭</div>
+              <p>لا توجد حركات في الفترة المحددة.</p>
+            </div>
           )}
 
           {!loading && !error && movements.length > 0 && (
-            <div className="table-responsive">
-              <table className="data-table">
+            <div className="table-container">
+              <table className="table">
                 <thead>
                   <tr>
                     <th>التاريخ والوقت</th>
@@ -174,24 +191,35 @@ export default function LedgerPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {movements.map((m) => (
-                    <tr key={m.movement_id}>
-                      <td style={{ direction: 'ltr', textAlign: 'right' }}>
-                        {new Date(m.datetime).toLocaleString('en-GB')}
-                      </td>
-                      <td>
-                        <span className={`badge badge-${m.type === 'SALE' ? 'danger' : m.type === 'PURCHASE' ? 'success' : 'neutral'}`}>
-                          {typeLabels[m.type] ?? m.type}
-                        </span>
-                      </td>
-                      <td style={{ direction: 'ltr', color: m.qty_change > 0 ? 'green' : m.qty_change < 0 ? 'red' : 'inherit', fontWeight: 'bold' }}>
-                        {m.qty_change > 0 ? `+${m.qty_change}` : m.qty_change}
-                      </td>
-                      <td>{m.new_balance}</td>
-                      <td>{renderReference(m)}</td>
-                      <td className="muted">{m.notes || '—'}</td>
-                    </tr>
-                  ))}
+                  {movements.map((m) => {
+                     let badgeClass = 'badge-muted';
+                     if (m.type === 'SALE') badgeClass = 'badge text-error';
+                     else if (m.type === 'PURCHASE') badgeClass = 'badge-success';
+                     else if (m.type === 'SALES_RETURN') badgeClass = 'badge-success';
+
+                     const isPositive = m.qty_change > 0;
+                     const isNegative = m.qty_change < 0;
+                     const qtyColor = isPositive ? 'var(--color-success-text)' : isNegative ? 'var(--color-error-text)' : 'inherit';
+
+                     return (
+                      <tr key={m.movement_id}>
+                        <td style={{ direction: 'ltr', textAlign: 'right' }}>
+                          {new Date(m.datetime).toLocaleString('en-GB')}
+                        </td>
+                        <td>
+                          <span className={`badge ${badgeClass}`}>
+                            {typeLabels[m.type] ?? m.type}
+                          </span>
+                        </td>
+                        <td style={{ direction: 'ltr', color: qtyColor, fontWeight: 'bold' }}>
+                          {isPositive ? `+${m.qty_change}` : m.qty_change}
+                        </td>
+                        <td className="font-bold">{m.new_balance}</td>
+                        <td>{renderReference(m)}</td>
+                        <td className="muted text-sm">{m.notes || '—'}</td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

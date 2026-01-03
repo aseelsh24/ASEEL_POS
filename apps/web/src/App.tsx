@@ -24,20 +24,22 @@ function App() {
       <IdleLockOverlay />
       {settingsInitialized && auth.isAuthenticated && (
         <header className="app-header">
-          <div className="app-title">ASEEL POS</div>
-          <nav className="app-nav" aria-label="التنقل الرئيسي">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  `nav-link${isActive ? ' nav-link-active' : ''}`
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
+          <div className="app-header-content">
+            <div className="app-title">ASEEL POS</div>
+            <nav className="app-nav" aria-label="التنقل الرئيسي">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `nav-link${isActive ? ' nav-link-active' : ''}`
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
         </header>
       )}
       <main className="app-content">
