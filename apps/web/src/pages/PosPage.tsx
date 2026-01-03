@@ -11,6 +11,7 @@ type CartLine = {
   unitPrice: number
   quantity: number
   discountAmount: number
+  unit?: string
 }
 
 function calculateCartTotals(lines: CartLine[]) {
@@ -34,6 +35,13 @@ const successBoxStyle = {
   border: '1px solid var(--color-border)',
 }
 
+// Fractional units helper
+function isFractionalUnit(unit?: string): boolean {
+  if (!unit) return false
+  const fractional = ['kg', 'g', 'l', 'ml']
+  return fractional.includes(unit.toLowerCase())
+}
+
 export default function PosPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [cartLines, setCartLines] = useState<CartLine[]>([])
@@ -42,6 +50,10 @@ export default function PosPage() {
   const [searchLoading, setSearchLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  // Payment Method State
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CREDIT'>('CASH')
+  const [customerName, setCustomerName] = useState('')
 
   const totals = useMemo(() => calculateCartTotals(cartLines), [cartLines])
 
@@ -128,6 +140,7 @@ export default function PosPage() {
         ...baseInfo,
         quantity: 1,
         discountAmount: 0,
+        unit: baseInfo.unit,
       }
       return [...prev, newLine]
     })
@@ -137,6 +150,26 @@ export default function PosPage() {
 
   function updateLineQuantity(productId: number, value: number) {
     if (Number.isNaN(value) || value <= 0) return
+
+    // Find the line to validate unit
+    const line = cartLines.find(l => l.productId === productId)
+    if (line) {
+       const isFractional = isFractionalUnit(line.unit)
+       if (!isFractional && !Number.isInteger(value)) {
+         // Show error or just round/ignore? Requirement says "show Arabic error"
+         // Since this is onChange/input logic, showing an alert on every keystroke is bad.
+         // We will allow the input but show validation error in the UI or block completion?
+         // Better: The input component validation (step) prevents typing invalid values often.
+         // But if they paste or type, we should block setting state or round it.
+         // Requirement: "If user typed 1.5, show Arabic error: 'هذه الوحدة لا تقبل الكسور'"
+         // We'll set the error state.
+         setError('هذه الوحدة لا تقبل الكسور')
+         return
+       }
+    }
+
+    setError(null)
+
     setCartLines((prev) =>
       prev.map((line) => {
         if (line.productId !== productId) return line
@@ -159,6 +192,19 @@ export default function PosPage() {
     )
   }
 
+  function updateLinePrice(productId: number, value: number) {
+     if (Number.isNaN(value) || value < 0) return
+     setCartLines((prev) =>
+       prev.map((line) => {
+         if (line.productId !== productId) return line
+         // If price changes, discount might exceed total, so we clamp it
+         const maxDiscount = line.quantity * value
+         const discountAmount = Math.min(line.discountAmount, maxDiscount)
+         return { ...line, unitPrice: value, discountAmount }
+       })
+     )
+  }
+
   function removeLine(productId: number) {
     setCartLines((prev) => prev.filter((line) => line.productId !== productId))
   }
@@ -167,6 +213,8 @@ export default function PosPage() {
     setCartLines([])
     setSuccessMessage(null)
     setError(null)
+    setPaymentMethod('CASH')
+    setCustomerName('')
   }
 
   async function handleCompleteSale() {
@@ -184,10 +232,16 @@ export default function PosPage() {
       return
     }
 
+    if (paymentMethod === 'CREDIT' && !customerName.trim()) {
+      setError('اسم العميل مطلوب للبيع الآجل')
+      return
+    }
+
     try {
       const invoice = await createSale({
         cashier_user_id: 1,
-        payment_method: 'CASH',
+        payment_method: paymentMethod,
+        customer_name: paymentMethod === 'CREDIT' ? customerName.trim() : undefined,
         items: cartLines.map((line) => ({
           product_id: line.productId,
           qty: line.quantity,
@@ -198,6 +252,8 @@ export default function PosPage() {
 
       setSuccessMessage(`تم تسجيل الفاتورة رقم ${invoice.invoice_number} بنجاح.`)
       setCartLines([])
+      setCustomerName('')
+      setPaymentMethod('CASH')
     } catch (err) {
       console.error('Failed to complete sale', err)
       setError('تعذر إتمام البيع، يرجى المحاولة مجدداً')
@@ -338,45 +394,65 @@ export default function PosPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {cartLines.map((line) => (
-                      <tr key={line.productId}>
-                        <td>
-                          <div className="font-bold">{line.name}</div>
-                          <div className="muted text-sm">{currencyFormatter.format(line.unitPrice)}</div>
-                        </td>
-                        <td>
-                          <div className="d-flex items-center gap-1">
-                            <button className="btn btn-secondary btn-sm p-1" style={{ minWidth: '24px', height: '24px' }} onClick={() => updateLineQuantity(line.productId, Math.max(1, line.quantity - 1))}>-</button>
+                    {cartLines.map((line) => {
+                      const isFractional = isFractionalUnit(line.unit)
+                      const step = isFractional ? 0.01 : 1
+                      return (
+                        <tr key={line.productId}>
+                          <td>
+                            <div className="font-bold">{line.name}</div>
+                            {/* Editable Unit Price */}
+                            <div className="d-flex items-center gap-1 mt-1">
+                               <input
+                                  type="number"
+                                  min={0}
+                                  step={0.01}
+                                  value={line.unitPrice}
+                                  onChange={(e) => updateLinePrice(line.productId, Number(e.target.value))}
+                                  className="form-input p-1 text-sm"
+                                  style={{ width: '80px', height: '24px' }}
+                                />
+                                <span className="text-xs muted">ج.م</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="d-flex items-center gap-1">
+                              <button className="btn btn-secondary btn-sm p-1" style={{ minWidth: '24px', height: '24px' }} onClick={() => updateLineQuantity(line.productId, Math.max(step, line.quantity - 1))}>-</button>
+                              <div className="flex flex-col items-center">
+                                <input
+                                  type="number"
+                                  min={step}
+                                  step={step}
+                                  value={line.quantity}
+                                  onChange={(e) => updateLineQuantity(line.productId, Number(e.target.value))}
+                                  className="form-input p-1 text-center"
+                                  style={{ width: '60px', minHeight: '28px' }}
+                                />
+                                {line.unit && <span className="text-xs muted">{line.unit}</span>}
+                              </div>
+                              <button className="btn btn-secondary btn-sm p-1" style={{ minWidth: '24px', height: '24px' }} onClick={() => updateLineQuantity(line.productId, line.quantity + 1)}>+</button>
+                            </div>
+                          </td>
+                          <td>
                             <input
-                              type="number"
-                              min={1}
-                              value={line.quantity}
-                              onChange={(e) => updateLineQuantity(line.productId, Number(e.target.value))}
-                              className="form-input p-1 text-center"
-                              style={{ width: '40px', minHeight: '28px' }}
+                               type="number"
+                               min={0}
+                               value={line.discountAmount}
+                               onChange={(e) => updateLineDiscount(line.productId, Number(e.target.value))}
+                               className="form-input p-1"
+                               placeholder="خصم"
+                               style={{ width: '60px', minHeight: '28px' }}
                             />
-                            <button className="btn btn-secondary btn-sm p-1" style={{ minWidth: '24px', height: '24px' }} onClick={() => updateLineQuantity(line.productId, line.quantity + 1)}>+</button>
-                          </div>
-                        </td>
-                        <td>
-                          <input
-                             type="number"
-                             min={0}
-                             value={line.discountAmount}
-                             onChange={(e) => updateLineDiscount(line.productId, Number(e.target.value))}
-                             className="form-input p-1"
-                             placeholder="خصم"
-                             style={{ width: '60px', minHeight: '28px' }}
-                          />
-                        </td>
-                        <td>{currencyFormatter.format(Math.max(0, line.quantity * line.unitPrice - line.discountAmount))}</td>
-                        <td>
-                          <button type="button" className="btn btn-ghost btn-sm text-error p-1" onClick={() => removeLine(line.productId)}>
-                            ✕
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td>{currencyFormatter.format(Math.max(0, line.quantity * line.unitPrice - line.discountAmount))}</td>
+                          <td>
+                            <button type="button" className="btn btn-ghost btn-sm text-error p-1" onClick={() => removeLine(line.productId)}>
+                              ✕
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -395,6 +471,45 @@ export default function PosPage() {
              <div className="d-flex justify-between mb-4 text-xl font-bold text-primary">
                <span>الإجمالي النهائي</span>
                <span>{currencyFormatter.format(totals.grandTotal)}</span>
+             </div>
+
+             {/* Payment Method Section */}
+             <div className="mb-4 p-3 bg-gray-50 rounded border border-gray-200">
+                <div className="d-flex gap-4 mb-2">
+                    <label className="d-flex items-center gap-2 cursor-pointer">
+                        <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="CASH"
+                            checked={paymentMethod === 'CASH'}
+                            onChange={() => setPaymentMethod('CASH')}
+                        />
+                        <span className="font-bold">نقدًا</span>
+                    </label>
+                    <label className="d-flex items-center gap-2 cursor-pointer">
+                        <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="CREDIT"
+                            checked={paymentMethod === 'CREDIT'}
+                            onChange={() => setPaymentMethod('CREDIT')}
+                        />
+                        <span className="font-bold">آجل</span>
+                    </label>
+                </div>
+
+                {paymentMethod === 'CREDIT' && (
+                    <div className="mt-2 animate-fadeIn">
+                        <label className="block text-sm font-bold mb-1">اسم العميل (مطلوب)</label>
+                        <input
+                            type="text"
+                            className="form-input w-full"
+                            placeholder="أدخل اسم العميل"
+                            value={customerName}
+                            onChange={(e) => setCustomerName(e.target.value)}
+                        />
+                    </div>
+                )}
              </div>
 
             <div className="grid grid-cols-2 gap-3">
