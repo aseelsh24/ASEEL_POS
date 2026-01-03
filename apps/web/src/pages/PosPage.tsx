@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Product } from '@core/index'
+import type { PaymentMethod, Product } from '@core/index'
 import { fetchProducts } from '../api/productsApi'
 import { createSale } from '../api/posApi'
 import { resolveProductIdentity } from '../utils/productUtils'
@@ -42,6 +42,8 @@ export default function PosPage() {
   const [searchLoading, setSearchLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH')
+  const [customerName, setCustomerName] = useState('')
 
   const totals = useMemo(() => calculateCartTotals(cartLines), [cartLines])
 
@@ -184,10 +186,19 @@ export default function PosPage() {
       return
     }
 
+    if (!['CASH', 'CREDIT'].includes(paymentMethod)) {
+      setError('يرجى اختيار طريقة دفع صحيحة')
+      return
+    }
+
     try {
       const invoice = await createSale({
         cashier_user_id: 1,
-        payment_method: 'CASH',
+        payment_method: paymentMethod,
+        customer_name:
+          paymentMethod === 'CREDIT' && customerName.trim()
+            ? customerName.trim()
+            : undefined,
         items: cartLines.map((line) => ({
           product_id: line.productId,
           qty: line.quantity,
@@ -379,6 +390,56 @@ export default function PosPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </div>
+
+          <div className="card mt-4">
+            <div className="card-header">
+              <h3 className="card-title">طريقة الدفع</h3>
+            </div>
+            <div className="form-group">
+              <label className="form-label">اختر طريقة الدفع</label>
+              <div className="d-flex items-center gap-4">
+                <label className="d-flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="CASH"
+                    checked={paymentMethod === 'CASH'}
+                    onChange={() => {
+                      setPaymentMethod('CASH')
+                      setCustomerName('')
+                    }}
+                  />
+                  <span>نقدًا</span>
+                </label>
+                <label className="d-flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="CREDIT"
+                    checked={paymentMethod === 'CREDIT'}
+                    onChange={() => setPaymentMethod('CREDIT')}
+                  />
+                  <span>آجل</span>
+                </label>
+              </div>
+            </div>
+
+            {paymentMethod === 'CREDIT' && (
+              <div className="form-group">
+                <label className="form-label" htmlFor="customerName">
+                  اسم العميل (اختياري)
+                </label>
+                <input
+                  id="customerName"
+                  className="form-input"
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="مثال: محمد أحمد"
+                />
               </div>
             )}
           </div>
