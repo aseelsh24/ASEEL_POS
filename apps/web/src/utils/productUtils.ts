@@ -5,6 +5,8 @@ export interface ProductIdentity {
   name: string
   barcode?: string
   unitPrice: number
+  unit: string | null
+  stockQty: number
 }
 
 export function resolveProductIdentity(product: Product): ProductIdentity | null {
@@ -25,5 +27,7 @@ export function resolveProductIdentity(product: Product): ProductIdentity | null
     name: product.name ?? 'منتج',
     barcode: product.barcode ?? undefined,
     unitPrice: Number(product.sale_price) || 0,
+    unit: (product as any).unit ?? null,
+    stockQty: Number((product as any).stock_qty ?? 0) || 0,
   }
 }

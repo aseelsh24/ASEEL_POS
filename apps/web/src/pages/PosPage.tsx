@@ -9,6 +9,8 @@ type CartLine = {
   name: string
   barcode?: string
   unitPrice: number
+  unit: string | null
+  stockQty: number
   quantity: number
   discountAmount: number
 }
@@ -155,6 +157,18 @@ export default function PosPage() {
         const maxDiscount = line.quantity * line.unitPrice
         const discountAmount = Math.min(value, maxDiscount)
         return { ...line, discountAmount }
+      }),
+    )
+  }
+
+  function updateLineUnitPrice(productId: number, value: number) {
+    if (Number.isNaN(value) || value < 0) return
+    setCartLines((prev) =>
+      prev.map((line) => {
+        if (line.productId !== productId) return line
+        const maxDiscount = line.quantity * value
+        const discountAmount = Math.min(line.discountAmount, maxDiscount)
+        return { ...line, unitPrice: value, discountAmount }
       }),
     )
   }
@@ -332,7 +346,8 @@ export default function PosPage() {
                     <tr>
                       <th>الاسم</th>
                       <th>الكمية</th>
-                      <th>السعر</th>
+                      <th>سعر الوحدة</th>
+                      <th>خصم</th>
                       <th>الإجمالي</th>
                       <th></th>
                     </tr>
@@ -357,6 +372,17 @@ export default function PosPage() {
                             />
                             <button className="btn btn-secondary btn-sm p-1" style={{ minWidth: '24px', height: '24px' }} onClick={() => updateLineQuantity(line.productId, line.quantity + 1)}>+</button>
                           </div>
+                        </td>
+                        <td>
+                          <input
+                             type="number"
+                             min={0}
+                             value={line.unitPrice}
+                             onChange={(e) => updateLineUnitPrice(line.productId, Number(e.target.value))}
+                             className="form-input p-1"
+                             placeholder="السعر"
+                             style={{ width: '70px', minHeight: '28px' }}
+                          />
                         </td>
                         <td>
                           <input
